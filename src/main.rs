@@ -31,8 +31,8 @@ fn return_symbol(table: &mut HashMap<String, i32>, symbol: String, position: i32
 }
 
 // Parser (Split up string into subsequent parts)
-fn parser(symbol: String) -> (str, str, str) {
+// fn parser(symbol: String) -> (str, str, str) {
     
-}
+// }
 
 // Convert instruction into binary
