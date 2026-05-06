@@ -14,7 +14,7 @@ fn main() {
 
     if let Ok(lines) = read_lines(&args[1]) {
         for line in lines.map_while(Result::ok) {
-            match whitespace_remove(&line) {
+            match whitespace_comment_remove(&line) {
                 Some(new_line) => println!("{}", new_line),
                 None => continue,
             }
@@ -53,8 +53,8 @@ fn return_symbol(table: &mut HashMap<String, i32>, symbol: String, position: i32
 // }
 
 // Removes comments from the line and returns a new line
-fn whitespace_remove(line: &str) -> Option<String> {
-    let split_line = &mut line.split("//");
+fn whitespace_comment_remove(line: &str) -> Option<String> {
+    let split_line = &mut line.trim().split("//");
     let new_line = String::from(split_line.next().unwrap_or(""));
 
     if new_line.len() > 0 {
