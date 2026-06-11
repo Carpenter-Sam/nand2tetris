@@ -1,11 +1,9 @@
-(HELLO)
-test1
-test2
-test3
-(HI)
+ = test1 ; 
+ = test2 ; 
+ = test3 ; 
 0000000111110100
-test4
-test5
+ = test4 ; 
+ = test5 ; 
 @-1
 @HELLO
 @12h
@@ -15,3 +13,6 @@ test5
 0111111111111111
 0000000000000000
 @32768
+dest = comp ; jmp
+ = comp ; jmp
+dest = comp ; 

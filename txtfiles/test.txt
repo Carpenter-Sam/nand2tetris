@@ -9,6 +9,7 @@ test2
 // just a comment
  test4 // another comment on the test 4
 test5
+// below are a bunch of variable tests
 @-1
 @HELLO
 @12h
@@ -18,3 +19,6 @@ test5
 @32767
 @0
 @32768
+dest = comp ; jmp 
+comp ; jmp
+dest = comp

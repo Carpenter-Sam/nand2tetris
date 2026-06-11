@@ -60,6 +60,10 @@ fn main() {
                 None => continue,
             }
 
+            if is_jmp(&processed_line) {
+                continue
+            }
+
             let translated_line = translate(&mut table, &processed_line, &n);
 
             // Consumes and prints the current line to the file, along with a newline
@@ -149,7 +153,7 @@ fn translate(table: &mut HashMap<String, i32>, line: &str, position: &i32) -> St
     /*
     if starts with @ then value after the @
         if the value is a decimal number within bounds translate to 15-bit binary, append onto 0 and return
-        else it's a label, check SymbolTable and replace
+        else it's a variable, check SymbolTable and replace
     if c-command:
         split up into dest, comp and jmp
         translate each part separately
@@ -157,10 +161,11 @@ fn translate(table: &mut HashMap<String, i32>, line: &str, position: &i32) -> St
 
     */
 
+    // todo: add compatability for variables and labels
     if &line[0..1] == "@" { // Checks if line is an a-command or variable
         match &line[1..].parse::<u16>() {
             Ok(num) => { // a-command
-                if (*num >= 0 && *num <= 32767) { // if the a-command value isn't 0..=32767 then it is treated like a variable
+                if *num <= 32767 { // if the a-command value isn't 0..=32767 then it is treated like a variable
                     return format!("0{num:015b}");
                 }
             }
@@ -169,8 +174,40 @@ fn translate(table: &mut HashMap<String, i32>, line: &str, position: &i32) -> St
             }
         }
         line.to_string()
-    } else {
-        line.to_string()
+    } else { // for if it is a c-command
+        // split up into individual components and translate
+        translate_c_command(&line)
     }
 }
 
+fn translate_c_command(command: &str) -> String {
+    // Split up into component pieces
+    let (dest, comp, jmp) = parse_c_command(command);
+    format!("{} = {} ; {}", dest, comp, jmp)
+}
+
+fn parse_c_command(command: &str) -> (String, String, String) {
+    // dest = comp ; jump
+
+    // split by =
+    let split_command = &mut command.trim().split("=");
+    // if = then this is dest, else comp ; jmp
+    let mut dest = String::from(split_command.next().unwrap_or("").trim());
+    // if no = then this is comp ; jmp else None
+    let mut comp_jmp = String::from(split_command.next().unwrap_or("").trim());
+    
+    // Swaps dest and comp_jmp if comp_jmp is None
+    if comp_jmp == "" {
+        comp_jmp = dest;
+        dest = String::new();
+    }
+
+    // split by ;
+    let split_command = &mut comp_jmp.trim().split(";");
+    // if there is a ; then before the ; is comp, after is jmp
+    let comp = String::from(split_command.next().unwrap_or("").trim());
+    // if there isn't a ; then it's just comp
+    let jmp = String::from(split_command.next().unwrap_or("").trim());
+
+    (dest, comp, jmp)
+}
