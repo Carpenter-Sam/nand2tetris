@@ -5,6 +5,16 @@ test1
 test2
    test3       // test for whitespace
    (HI)    
+   @500 // tests a-command
 // just a comment
  test4 // another comment on the test 4
 test5
+@-1
+@HELLO
+@12h
+@h12
+@12h12
+@h12h
+@32767
+@0
+@32768

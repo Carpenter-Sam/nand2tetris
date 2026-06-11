@@ -60,8 +60,10 @@ fn main() {
                 None => continue,
             }
 
+            let translated_line = translate(&mut table, &processed_line, &n);
+
             // Consumes and prints the current line to the file, along with a newline
-            if let Err(why) = file.write((processed_line + "\n").as_bytes()) {
+            if let Err(why) = file.write((translated_line + "\n").as_bytes()) {
                 panic!("couldn't write to {}: {}", display, why);
             }
 
@@ -141,7 +143,7 @@ fn is_jmp(line: &str) -> bool {
 
 
 // Enter in a line, and it will return a translation
-fn translate(line: &str) -> String {
+fn translate(table: &mut HashMap<String, i32>, line: &str, position: &i32) -> String {
     // Find out if the line is an A-command, a C-command or a Label.
     // Parse, then translate.
     /*
@@ -155,4 +157,20 @@ fn translate(line: &str) -> String {
 
     */
 
+    if &line[0..1] == "@" { // Checks if line is an a-command or variable
+        match &line[1..].parse::<u16>() {
+            Ok(num) => { // a-command
+                if (*num >= 0 && *num <= 32767) { // if the a-command value isn't 0..=32767 then it is treated like a variable
+                    return format!("0{num:015b}");
+                }
+            }
+            _ => { // variable
+                
+            }
+        }
+        line.to_string()
+    } else {
+        line.to_string()
+    }
 }
+
