@@ -13,7 +13,7 @@ fn main() {
         "Must provide an argument corresponding to a relative filename."
     );
 
-    // This is the SymbolTable.
+    // This is the table containing the labels and symbols.
     let mut table: HashMap<String, i32> = HashMap::new();
 
     if let Ok(lines) = read_lines(&args[1]) {
@@ -122,7 +122,7 @@ fn jmp_label_process(table: &mut HashMap<String, i32>, line: &str, position: &i3
 
     let jmp_label = &line[1..line.len() - 1];
     if table.contains_key(jmp_label) {
-        panic!("Jump label used twice.")
+        panic!("The label {} can only be used once.", jmp_label)
     } else {
         table.insert(String::from(jmp_label), *position);
     }
@@ -153,7 +153,7 @@ fn translate(table: &mut HashMap<String, i32>, line: &str, position: &i32) -> St
     /*
     if starts with @ then value after the @
         if the value is a decimal number within bounds translate to 15-bit binary, append onto 0 and return
-        else it's a variable, check SymbolTable and replace
+        else it's a variable, check table and replace
     if c-command:
         split up into dest, comp and jmp
         translate each part separately
