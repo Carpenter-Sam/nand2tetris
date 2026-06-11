@@ -1,8 +1,10 @@
 // This acts as a test file, that currently just contains the phrase "test" followed by sequentially increasing numbers 5 times.
-(HELLO)
+(HELLO) // tests whether it increments line number if it's a label
 test1
+
 test2
-   test3       
-   (HI)   
+   test3       // test for whitespace
+   (HI)    
+// just a comment
  test4 // another comment on the test 4
 test5
