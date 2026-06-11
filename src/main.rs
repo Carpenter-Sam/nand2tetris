@@ -19,13 +19,11 @@ fn main() {
     if let Ok(lines) = read_lines(&args[1]) {
         let mut n = 0;
         for line in lines.map_while(Result::ok) {
-            let processed_line;
-
             // Remove whitespace and comments, if line is now empty we continue.
-            match whitespace_comment_remove(&line) {
-                Some(new_line) => processed_line = new_line,
+            let processed_line = match whitespace_comment_remove(&line) {
+                Some(new_line) => new_line,
                 None => continue,
-            }
+            };
 
             if jmp_label_process(&mut table, &processed_line, &n) {
                 continue;
@@ -42,20 +40,18 @@ fn main() {
     let display = path.display();
 
     // Open file in write-only mode
-    let mut file = match File::create(&path) {
+    let mut file = match File::create(path) {
         Err(why) => panic!("couldn't create {}: {}", display, why),
         Ok(file) => file,
     };
 
     if let Ok(lines) = read_lines(&args[1]) {
         for line in lines.map_while(Result::ok) {
-            let processed_line;
-
             // Remove whitespace and comments, if line is now empty we continue.
-            match whitespace_comment_remove(&line) {
-                Some(new_line) => processed_line = new_line,
+            let processed_line = match whitespace_comment_remove(&line) {
+                Some(new_line) => new_line,
                 None => continue,
-            }
+            };
 
             if is_jmp(&processed_line) {
                 continue;
@@ -85,7 +81,7 @@ where
 fn whitespace_comment_remove(line: &str) -> Option<String> {
     let split_line = &mut line.trim().split("//");
     let new_line = String::from(split_line.next().unwrap_or("").trim());
-    if new_line.len() > 0 {
+    if !new_line.is_empty() {
         Some(new_line)
     } else {
         None
@@ -115,7 +111,7 @@ fn is_jmp(line: &str) -> bool {
         return false;
     }
 
-    if line.chars().next() != Some('(') || line.chars().next_back() != Some(')') {
+    if !line.starts_with('(') || !line.ends_with(')') {
         return false;
     }
 
@@ -137,29 +133,19 @@ fn translate(table: &mut HashMap<String, i32>, line: &str) -> String {
 
     */
 
-    // todo: add compatability for variables and labels
     if &line[0..1] == "@" {
-        // Checks if line is an a-command or variable
-        match &line[1..].parse::<u16>() {
-            Ok(num) => {
-                // a-command
-                if *num <= 32767 {
-                    // if the a-command value isn't 0..=32767 then it is treated like a variable
-                    return format!("0{num:015b}");
-                } else {
-                    // invalid a-command -> treated as a variable
-                    return translate_variable(table, &line[1..]);
-                }
-            }
-            _ => {
-                // variable
-                return translate_variable(table, &line[1..]);
-            }
+        // Checks if line is an a-command and that the number is 0..=32767
+        if let Ok(num) = &line[1..].parse::<u16>()
+            && *num <= 32767
+        {
+            format!("0{num:015b}")
+        } else {
+            translate_variable(table, &line[1..])
         }
     } else {
-        // for if it is a c-command
-        // split up into individual components and translate
-        translate_c_command(&line)
+        // if it is a c-command,
+        // then split up into individual components and translate
+        translate_c_command(line)
     }
 }
 
@@ -169,7 +155,7 @@ fn translate_variable(table: &mut HashMap<String, i32>, variable: &str) -> Strin
     // Check if variable exists in hashmap
     // If does not exist: insert variable + location into hashmap and return location of the variable
     // If there is no space left, panic.
-    if let None = table.get(variable) {
+    if table.get(variable).is_none() {
         if unsafe { COUNT } >= 16384 {
             panic!("Ran out of RAM to allocate memory for {}.", variable)
         }
@@ -206,7 +192,7 @@ fn parse_c_command(command: &str) -> (String, String, String) {
     let mut comp_jmp = String::from(split_command.next().unwrap_or("").trim());
 
     // Swaps dest and comp_jmp if comp_jmp is None
-    if comp_jmp == "" {
+    if comp_jmp.is_empty() {
         comp_jmp = dest;
         dest = String::new();
     }
