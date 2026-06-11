@@ -31,7 +31,7 @@ fn main() {
                 continue;
             }
 
-            // POTENTIAL ERROR: Currently increases line count if not empty or jump label, 
+            // POTENTIAL ERROR: Currently increases line count if not empty or jump label,
             // and jump labels look at the next command.
             n += 1;
         }
@@ -48,7 +48,6 @@ fn main() {
     };
 
     if let Ok(lines) = read_lines(&args[1]) {
-        let mut n = 0;
         for line in lines.map_while(Result::ok) {
             let processed_line;
 
@@ -59,7 +58,7 @@ fn main() {
             }
 
             if is_jmp(&processed_line) {
-                continue
+                continue;
             }
 
             let translated_line = translate(&mut table, &processed_line);
@@ -68,8 +67,6 @@ fn main() {
             if let Err(why) = file.write((translated_line + "\n").as_bytes()) {
                 panic!("couldn't write to {}: {}", display, why);
             }
-
-            n += 1;
         }
     }
 
@@ -84,17 +81,6 @@ where
     Ok(io::BufReader::new(file).lines())
 }
 
-// Return symbol look-up table
-fn return_symbol(table: &mut HashMap<String, i32>, symbol: String, position: i32) -> i32 {
-    match table.get(&symbol) {
-        Some(line_number) => *line_number,
-        None => {
-            table.insert(symbol, position);
-            position
-        }
-    }
-}
-
 // Removes comments from the line and returns a new line
 fn whitespace_comment_remove(line: &str) -> Option<String> {
     let split_line = &mut line.trim().split("//");
@@ -105,8 +91,6 @@ fn whitespace_comment_remove(line: &str) -> Option<String> {
         None
     }
 }
-
-// Get jump label
 
 // Check if jump label, if so process, return boolean
 fn jmp_label_process(table: &mut HashMap<String, i32>, line: &str, position: &i32) -> bool {
@@ -154,20 +138,26 @@ fn translate(table: &mut HashMap<String, i32>, line: &str) -> String {
     */
 
     // todo: add compatability for variables and labels
-    if &line[0..1] == "@" { // Checks if line is an a-command or variable
+    if &line[0..1] == "@" {
+        // Checks if line is an a-command or variable
         match &line[1..].parse::<u16>() {
-            Ok(num) => { // a-command
-                if *num <= 32767 { // if the a-command value isn't 0..=32767 then it is treated like a variable
+            Ok(num) => {
+                // a-command
+                if *num <= 32767 {
+                    // if the a-command value isn't 0..=32767 then it is treated like a variable
                     return format!("0{num:015b}");
-                } else { // invalid a-command -> treated as a variable
+                } else {
+                    // invalid a-command -> treated as a variable
                     return translate_variable(table, &line[1..]);
                 }
             }
-            _ => { // variable
+            _ => {
+                // variable
                 return translate_variable(table, &line[1..]);
             }
         }
-    } else { // for if it is a c-command
+    } else {
+        // for if it is a c-command
         // split up into individual components and translate
         translate_c_command(&line)
     }
@@ -178,14 +168,17 @@ fn translate_variable(table: &mut HashMap<String, i32>, variable: &str) -> Strin
 
     // Check if variable exists in hashmap
     // If does not exist: insert variable + location into hashmap and return location of the variable
-        // If there is no space left, panic.
+    // If there is no space left, panic.
     if let None = table.get(variable) {
-        if unsafe{COUNT} >= 16384 {panic!("Ran out of RAM to allocate memory for {}.", variable)}
-        table.insert(variable.to_string(), unsafe {COUNT});
+        if unsafe { COUNT } >= 16384 {
+            panic!("Ran out of RAM to allocate memory for {}.", variable)
+        }
+        table.insert(variable.to_string(), unsafe { COUNT });
 
-        unsafe {COUNT += 1;}
+        unsafe {
+            COUNT += 1;
+        }
     }
-
 
     // If exists: return the location of the variable
     format!("0{:015b}", table.get(variable).unwrap())
@@ -211,7 +204,7 @@ fn parse_c_command(command: &str) -> (String, String, String) {
     let mut dest = String::from(split_command.next().unwrap_or("").trim());
     // if no = then this is comp ; jmp else None
     let mut comp_jmp = String::from(split_command.next().unwrap_or("").trim());
-    
+
     // Swaps dest and comp_jmp if comp_jmp is None
     if comp_jmp == "" {
         comp_jmp = dest;
@@ -238,7 +231,7 @@ fn translate_dest(dest: &str) -> String {
         "AM" => String::from("101"),
         "AD" => String::from("110"),
         "AMD" => String::from("111"),
-        _ => panic!("{} is not a valid dest parameter.", dest)
+        _ => panic!("{} is not a valid dest parameter.", dest),
     }
 }
 
@@ -274,7 +267,7 @@ fn translate_comp(comp: &str) -> (String, String) {
         "D&M" => (String::from("000000"), String::from("1")),
         "D|M" => (String::from("010101"), String::from("1")),
 
-        _ => panic!("{} is not a valid comp parameter.", comp)
+        _ => panic!("{} is not a valid comp parameter.", comp),
     }
 }
 
@@ -289,20 +282,34 @@ fn translate_jmp(jmp: &str) -> String {
         "JLE" => String::from("110"),
         "JMP" => String::from("111"),
 
-        _ => panic!("{} is not a valid jump parameter.", jmp)
+        _ => panic!("{} is not a valid jump parameter.", jmp),
     }
 }
 
 fn initialise_symbol_table() -> HashMap<String, i32> {
     HashMap::<String, i32>::from([
-        ("R0".to_string(), 0),   ("R1".to_string(), 1),   ("R2".to_string(), 2),   ("R3".to_string(), 3),
-        ("R4".to_string(), 4),   ("R5".to_string(), 5),   ("R6".to_string(), 6),   ("R7".to_string(), 7),
-        ("R8".to_string(), 8),   ("R9".to_string(), 9),   ("R10".to_string(), 10), ("R11".to_string(), 11),
-        ("R12".to_string(), 12), ("R13".to_string(), 13), ("R14".to_string(), 14), ("R15".to_string(), 15),
-        
-        ("SCREEN".to_string(), 16384), ("KBD".to_string(), 24576),
-
-        ("SP".to_string(), 0), ("LCL".to_string(), 1), ("ARG".to_string(), 2), 
-        ("THIS".to_string(), 3), ("THAT".to_string(), 4)
+        ("R0".to_string(), 0),
+        ("R1".to_string(), 1),
+        ("R2".to_string(), 2),
+        ("R3".to_string(), 3),
+        ("R4".to_string(), 4),
+        ("R5".to_string(), 5),
+        ("R6".to_string(), 6),
+        ("R7".to_string(), 7),
+        ("R8".to_string(), 8),
+        ("R9".to_string(), 9),
+        ("R10".to_string(), 10),
+        ("R11".to_string(), 11),
+        ("R12".to_string(), 12),
+        ("R13".to_string(), 13),
+        ("R14".to_string(), 14),
+        ("R15".to_string(), 15),
+        ("SCREEN".to_string(), 16384),
+        ("KBD".to_string(), 24576),
+        ("SP".to_string(), 0),
+        ("LCL".to_string(), 1),
+        ("ARG".to_string(), 2),
+        ("THIS".to_string(), 3),
+        ("THAT".to_string(), 4),
     ])
 }
