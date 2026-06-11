@@ -37,8 +37,6 @@ fn main() {
         }
     }
 
-    println!("{:?}", table);
-
     // Create a file
     let path = Path::new("output.txt");
     let display = path.display();
@@ -74,6 +72,8 @@ fn main() {
             n += 1;
         }
     }
+
+    println!("Program successfully assembled to output.txt")
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
@@ -95,11 +95,6 @@ fn return_symbol(table: &mut HashMap<String, i32>, symbol: String, position: i32
     }
 }
 
-// Parser (Split up string into subsequent parts)
-// fn parser(symbol: String) -> (str, str, str) {
-
-// }
-
 // Removes comments from the line and returns a new line
 fn whitespace_comment_remove(line: &str) -> Option<String> {
     let split_line = &mut line.trim().split("//");
@@ -115,7 +110,7 @@ fn whitespace_comment_remove(line: &str) -> Option<String> {
 
 // Check if jump label, if so process, return boolean
 fn jmp_label_process(table: &mut HashMap<String, i32>, line: &str, position: &i32) -> bool {
-    println!("{} {}", &position, &line);
+    // println!("{} {}", &position, &line);
     if !is_jmp(line) {
         return false;
     }
@@ -187,11 +182,10 @@ fn translate_variable(table: &mut HashMap<String, i32>, variable: &str) -> Strin
     if let None = table.get(variable) {
         if unsafe{COUNT} >= 16384 {panic!("Ran out of RAM to allocate memory for {}.", variable)}
         table.insert(variable.to_string(), unsafe {COUNT});
+
+        unsafe {COUNT += 1;}
     }
 
-    unsafe {
-        COUNT += 1;
-    }
 
     // If exists: return the location of the variable
     format!("0{:015b}", table.get(variable).unwrap())
@@ -305,6 +299,10 @@ fn initialise_symbol_table() -> HashMap<String, i32> {
         ("R4".to_string(), 4),   ("R5".to_string(), 5),   ("R6".to_string(), 6),   ("R7".to_string(), 7),
         ("R8".to_string(), 8),   ("R9".to_string(), 9),   ("R10".to_string(), 10), ("R11".to_string(), 11),
         ("R12".to_string(), 12), ("R13".to_string(), 13), ("R14".to_string(), 14), ("R15".to_string(), 15),
-        ("SCREEN".to_string(), 16384), ("KBD".to_string(), 24576)
+        
+        ("SCREEN".to_string(), 16384), ("KBD".to_string(), 24576),
+
+        ("SP".to_string(), 0), ("LCL".to_string(), 1), ("ARG".to_string(), 2), 
+        ("THIS".to_string(), 3), ("THAT".to_string(), 4)
     ])
 }
