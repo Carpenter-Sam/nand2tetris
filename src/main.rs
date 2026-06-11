@@ -261,7 +261,7 @@ fn translate_comp(comp: &str) -> (String, String) {
         "D-M" => (String::from("010011"), String::from("1")),
         "M-D" => (String::from("000111"), String::from("1")),
         "D&M" => (String::from("000000"), String::from("1")),
-        "M|M" => (String::from("010101"), String::from("1")),
+        "D|M" => (String::from("010101"), String::from("1")),
 
         _ => panic!("{} is not a valid comp parameter.", comp)
     }
