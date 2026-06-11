@@ -14,7 +14,7 @@ fn main() {
     );
 
     // This is the table containing the labels and symbols.
-    let mut table: HashMap<String, i32> = HashMap::new();
+    let mut table: HashMap<String, i32> = initialise_symbol_table();
 
     if let Ok(lines) = read_lines(&args[1]) {
         let mut n = 0;
@@ -64,7 +64,7 @@ fn main() {
                 continue
             }
 
-            let translated_line = translate(&mut table, &processed_line, &n);
+            let translated_line = translate(&mut table, &processed_line);
 
             // Consumes and prints the current line to the file, along with a newline
             if let Err(why) = file.write((translated_line + "\n").as_bytes()) {
@@ -143,11 +143,8 @@ fn is_jmp(line: &str) -> bool {
     true
 }
 
-// Convert instruction into binary
-
-
 // Enter in a line, and it will return a translation
-fn translate(table: &mut HashMap<String, i32>, line: &str, position: &i32) -> String {
+fn translate(table: &mut HashMap<String, i32>, line: &str) -> String {
     // Find out if the line is an A-command, a C-command or a Label.
     // Parse, then translate.
     /*
@@ -167,17 +164,37 @@ fn translate(table: &mut HashMap<String, i32>, line: &str, position: &i32) -> St
             Ok(num) => { // a-command
                 if *num <= 32767 { // if the a-command value isn't 0..=32767 then it is treated like a variable
                     return format!("0{num:015b}");
+                } else { // invalid a-command -> treated as a variable
+                    return translate_variable(table, &line[1..]);
                 }
             }
             _ => { // variable
-                
+                return translate_variable(table, &line[1..]);
             }
         }
-        line.to_string()
     } else { // for if it is a c-command
         // split up into individual components and translate
         translate_c_command(&line)
     }
+}
+
+fn translate_variable(table: &mut HashMap<String, i32>, variable: &str) -> String {
+    static mut COUNT: i32 = 16;
+
+    // Check if variable exists in hashmap
+    // If does not exist: insert variable + location into hashmap and return location of the variable
+        // If there is no space left, panic.
+    if let None = table.get(variable) {
+        if unsafe{COUNT} >= 16384 {panic!("Ran out of RAM to allocate memory for {}.", variable)}
+        table.insert(variable.to_string(), unsafe {COUNT});
+    }
+
+    unsafe {
+        COUNT += 1;
+    }
+
+    // If exists: return the location of the variable
+    format!("0{:015b}", table.get(variable).unwrap())
 }
 
 fn translate_c_command(command: &str) -> String {
@@ -280,4 +297,14 @@ fn translate_jmp(jmp: &str) -> String {
 
         _ => panic!("{} is not a valid jump parameter.", jmp)
     }
+}
+
+fn initialise_symbol_table() -> HashMap<String, i32> {
+    HashMap::<String, i32>::from([
+        ("R0".to_string(), 0),   ("R1".to_string(), 1),   ("R2".to_string(), 2),   ("R3".to_string(), 3),
+        ("R4".to_string(), 4),   ("R5".to_string(), 5),   ("R6".to_string(), 6),   ("R7".to_string(), 7),
+        ("R8".to_string(), 8),   ("R9".to_string(), 9),   ("R10".to_string(), 10), ("R11".to_string(), 11),
+        ("R12".to_string(), 12), ("R13".to_string(), 13), ("R14".to_string(), 14), ("R15".to_string(), 15),
+        ("SCREEN".to_string(), 16384), ("KBD".to_string(), 24576)
+    ])
 }
