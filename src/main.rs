@@ -188,7 +188,7 @@ fn translate_c_command(command: &str) -> String {
     let (comp, a) = translate_comp(&comp);
     jmp = translate_jmp(&jmp);
 
-    format!("111{}{}{}{}", a, dest, comp, jmp)
+    format!("111{}{}{}{}", a, comp, dest, jmp)
 }
 
 fn parse_c_command(command: &str) -> (String, String, String) {

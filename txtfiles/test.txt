@@ -19,6 +19,4 @@ test5
 @32767
 @0
 @32768
-dest = comp ; jmp 
-comp ; jmp
-dest = comp
+
