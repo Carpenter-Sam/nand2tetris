@@ -182,8 +182,13 @@ fn translate(table: &mut HashMap<String, i32>, line: &str, position: &i32) -> St
 
 fn translate_c_command(command: &str) -> String {
     // Split up into component pieces
-    let (dest, comp, jmp) = parse_c_command(command);
-    format!("{} = {} ; {}", dest, comp, jmp)
+    let (mut dest, comp, mut jmp) = parse_c_command(command);
+
+    dest = translate_dest(&dest);
+    let (comp, a) = translate_comp(&comp);
+    jmp = translate_jmp(&jmp);
+
+    format!("111{}{}{}{}", a, dest, comp, jmp)
 }
 
 fn parse_c_command(command: &str) -> (String, String, String) {
@@ -210,4 +215,69 @@ fn parse_c_command(command: &str) -> (String, String, String) {
     let jmp = String::from(split_command.next().unwrap_or("").trim());
 
     (dest, comp, jmp)
+}
+
+fn translate_dest(dest: &str) -> String {
+    match dest {
+        "" => String::from("000"),
+        "M" => String::from("001"),
+        "D" => String::from("010"),
+        "MD" => String::from("011"),
+        "A" => String::from("100"),
+        "AM" => String::from("101"),
+        "AD" => String::from("110"),
+        "AMD" => String::from("111"),
+        _ => panic!("{} is not a valid dest parameter.", dest)
+    }
+}
+
+fn translate_comp(comp: &str) -> (String, String) {
+    match comp {
+        "0" => (String::from("101010"), String::from("0")),
+        "1" => (String::from("111111"), String::from("0")),
+        "-1" => (String::from("111010"), String::from("0")),
+        "D" => (String::from("001100"), String::from("0")),
+        "A" => (String::from("110000"), String::from("0")),
+        "!D" => (String::from("001101"), String::from("0")),
+        "!A" => (String::from("110001"), String::from("0")),
+        "-D" => (String::from("001111"), String::from("0")),
+        "-A" => (String::from("110011"), String::from("0")),
+        "D+1" => (String::from("011111"), String::from("0")),
+        "A+1" => (String::from("110111"), String::from("0")),
+        "D-1" => (String::from("001110"), String::from("0")),
+        "A-1" => (String::from("110010"), String::from("0")),
+        "D+A" => (String::from("000010"), String::from("0")),
+        "D-A" => (String::from("010011"), String::from("0")),
+        "A-D" => (String::from("000111"), String::from("0")),
+        "D&A" => (String::from("000000"), String::from("0")),
+        "D|A" => (String::from("010101"), String::from("0")),
+
+        "M" => (String::from("110000"), String::from("1")),
+        "!M" => (String::from("110001"), String::from("1")),
+        "-M" => (String::from("110011"), String::from("1")),
+        "M+1" => (String::from("110111"), String::from("1")),
+        "M-1" => (String::from("110010"), String::from("1")),
+        "D+M" => (String::from("000010"), String::from("1")),
+        "D-M" => (String::from("010011"), String::from("1")),
+        "M-D" => (String::from("000111"), String::from("1")),
+        "D&M" => (String::from("000000"), String::from("1")),
+        "M|M" => (String::from("010101"), String::from("1")),
+
+        _ => panic!("{} is not a valid comp parameter.", comp)
+    }
+}
+
+fn translate_jmp(jmp: &str) -> String {
+    match jmp {
+        "" => String::from("000"),
+        "JGT" => String::from("001"),
+        "JEQ" => String::from("010"),
+        "JGE" => String::from("011"),
+        "JLT" => String::from("100"),
+        "JNE" => String::from("101"),
+        "JLE" => String::from("110"),
+        "JMP" => String::from("111"),
+
+        _ => panic!("{} is not a valid jump parameter.", jmp)
+    }
 }
