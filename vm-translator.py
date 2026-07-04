@@ -128,11 +128,18 @@ class Parser:
 class CodeWriter:
     def __init__(self, filename: str):
         # Open file
-        pass
+        try:
+            self.file = open(filename, "w")
+        except:
+            print("Error occured while creating/opening file: " + filename)
+            exit()   
 
     def __del__(self):
         # Close file
-        pass
+        try:
+            self.file.close()
+        except AttributeError:
+            pass
 
     # Write to output arithmetically equivalent assembly.
     def writeArithmetic(self, command: str) -> None:
@@ -151,9 +158,14 @@ def main():
     while not parser.advance() and not parser.iteration_ended:
         if parser.current_command != "":
             print(parser.current_command)
-            print(parser.current_command_type)
-            print(parser.current_command_arg1)
-            print(parser.current_command_arg2, "\n")
+            # print(parser.current_command_type)
+            # print(parser.current_command_arg1)
+            # print(parser.current_command_arg2, "\n")
+            pass
+        elif parser.commandType == CommandType("C_ARITHMETIC"):
+            writer.writeArithmetic(parser.current_command)
+        elif parser.commandType == CommandType("C_PUSH") and parser.commandType == CommandType("C_PULL"):
+            writer.writePushPop(parser.current_command, parser.current_command_arg1, parser.current_command_arg2)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
