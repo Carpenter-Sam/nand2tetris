@@ -15,36 +15,33 @@ class CommandType(Enum):
 class Parser:
     def __init__(self, filename: str):
         self.current_command = ""
+        self.file_iter = ""
 
         # Open file
         try:
             self.file = open(filename)
         except(FileNotFoundError):
             print("Error file not found: " + filename)
-            exit()
-
-
+            exit()       
+        
     def __del__(self):
         # Close file
         try:
             self.file.close()
         except AttributeError:
             pass
-    
 
-    # Are there any more lines left in the input?
-    def hasMoreLines(self) -> bool: # type: ignore
-        pass
-
-    # Set next command to be equal to current command.
-    # Only called if hasMoreLines() is true.
+    # Set next command to be equal to current command and remove whitespace.
     def advance(self) -> None:
-        pass
+        try:
+            self.current_command = next(self.file).split('//')[0].strip()
+        except StopIteration:
+            self.current_command = ""
 
     # Return a constant representing the type of the current command.
-    def commandType(self) -> CommandType: # type: ignore
+    def commandType(self) -> CommandType:
         # Parse and return enum constant.
-        pass
+        return CommandType("C_ARITHMETIC")
 
     # Return first argument of the current command.
     # If C_ARITHMETIC, the command itself (add, sub, etc.) is returned.
@@ -80,6 +77,10 @@ class CodeWriter:
 def main():
     parser = Parser("in/" + sys.argv[1] + ".vm")
     writer = CodeWriter("out/" + sys.argv[1] + ".asm")
+    
+    # Runs until file ends
+    while parser.advance() or parser.current_command != "":
+        print(parser.current_command)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
