@@ -46,6 +46,7 @@ class Parser:
             self.current_command_type = self.commandType()
             self.current_command_arg1 = self.arg1()
             self.current_command_arg2 = self.arg2()
+            self.current_command = self.current_command.split()[0]
         except IndexError:
             self.current_command = ""
             self.current_command_type = ""
