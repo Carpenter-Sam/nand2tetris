@@ -108,9 +108,9 @@ class Parser:
     # Not called if C_RETURN.
     def arg1(self) -> str:
         # Parse and return argument.
-        if self.current_command_type == CommandType("C_ARITHMETIC"):
+        if self.current_command_type == CommandType.C_ARITHMETIC:
             return self.current_command.split(" ")[0]
-        elif self.current_command == "" or self.current_command_type == CommandType("C_RETURN"):
+        elif self.current_command == "" or self.current_command_type == CommandType.C_RETURN:
             return ""
         else:
             return self.current_command.split(" ")[1]
@@ -120,8 +120,8 @@ class Parser:
     def arg2(self) -> int:
         if self.current_command == "":
             return -1
-        elif self.current_command_type == CommandType("C_PUSH") or self.current_command_type == CommandType("C_POP") or \
-             self.current_command_type == CommandType("C_FUNCTION") or self.current_command_type == CommandType("C_CALL"):
+        elif self.current_command_type == CommandType.C_PUSH or self.current_command_type == CommandType.C_POP or \
+             self.current_command_type == CommandType.C_FUNCTION or self.current_command_type == CommandType.C_CALL:
             return int(self.current_command.split(" ")[2])
         else:
             return -1
@@ -144,11 +144,11 @@ class CodeWriter:
 
     # Write to output arithmetically equivalent assembly.
     def writeArithmetic(self, command: str) -> None:
-        pass
+        print("arithmetic")
 
     # Write to output logically equivalent push/pop command.
     def writePushPop(self, command:str, segment: str, index: int) -> None:
-        pass
+        print("push/pop")
         
     
 def main():
@@ -157,15 +157,15 @@ def main():
     
     # Runs until file ends
     while not parser.advance() and not parser.iteration_ended:
-        if parser.current_command != "":
-            print(parser.current_command)
-            # print(parser.current_command_type)
+        print(parser.current_command_type, parser.current_command_type == CommandType.C_ARITHMETIC)
+        if parser.current_command == "":
+            # print(parser.current_command)
             # print(parser.current_command_arg1)
             # print(parser.current_command_arg2, "\n")
             pass
-        elif parser.commandType == CommandType("C_ARITHMETIC"):
+        elif parser.current_command_type == CommandType.C_ARITHMETIC:
             writer.writeArithmetic(parser.current_command)
-        elif parser.commandType == CommandType("C_PUSH") and parser.commandType == CommandType("C_PULL"):
+        elif parser.current_command_type == CommandType.C_PUSH or parser.current_command_type == CommandType.C_PUSH:
             writer.writePushPop(parser.current_command, parser.current_command_arg1, parser.current_command_arg2)
 
 if __name__ == "__main__":
