@@ -184,25 +184,45 @@ class CodeWriter:
 
         elif command == "neg":
             # SP--
-
-            # 
-
+            self.file.write("@SP\n")
+            self.file.write("M=M-1\n")
+            # Pop first value
+            self.file.write("@SP\n")
+            self.file.write("A=M\n")
+            self.file.write("D=M\n")
+            # Subtract that value twice
+            self.file.write("A=D\n")
+            self.file.write("A=A-D\n")
+            self.file.write("A=A-D\n")
+            # Push back onto stack
+            self.file.write("D=A\n")
+            self.file.write("@0\n")
+            self.file.write("A=M\n")
+            self.file.write("M=D\n")
             # SP++
-            pass
+            self.file.write("@SP\n")
+            self.file.write("M=M+1\n")
 
 
         elif command == "eq":
+            # equal if you subtract them from one another and get zero
             pass
+
         elif command == "gt":
             pass
+
         elif command == "lt":
             pass
+
         elif command == "and":
             pass
+
         elif command == "or":
             pass
+
         elif command == "not":
             pass
+
         else:
             print(f"Incorrect line, should be a valid arithmetic command (add, sub, neg, eq, gt, lt, and, or, not): {command}")
             exit()  
