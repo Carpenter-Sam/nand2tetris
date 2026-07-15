@@ -144,7 +144,27 @@ class CodeWriter:
 
     # Write to output arithmetically equivalent assembly.
     def writeArithmetic(self, command: str) -> None:
-        print("arithmetic")
+        if command == "add":
+            pass
+        elif command == "sub":
+            pass
+        elif command == "neg":
+            pass
+        elif command == "eq":
+            pass
+        elif command == "gt":
+            pass
+        elif command == "lt":
+            pass
+        elif command == "and":
+            pass
+        elif command == "or":
+            pass
+        elif command == "not":
+            pass
+        else:
+            print(f"Incorrect line, should be a valid arithmetic command (add, sub, neg, eq, gt, lt, and, or, not): {command}")
+            exit()   
 
     # Write to output logically equivalent push/pop command.
     def writePushPop(self, command:str, segment: str, index: int) -> None:
@@ -182,7 +202,7 @@ class CodeWriter:
             self.file.write("@addr\n")
             self.file.write("M=D\n")
         else:
-            print(f"Incorrect command, should be push or pop: {command} {segment} {index}")
+            print(f"Incorrect line, should be push or pop command: {command} {segment} {index}")
             exit()   
 
 def main():
