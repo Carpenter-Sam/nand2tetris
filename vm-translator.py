@@ -145,11 +145,52 @@ class CodeWriter:
     # Write to output arithmetically equivalent assembly.
     def writeArithmetic(self, command: str) -> None:
         if command == "add":
-            pass
+            # SP--
+            self.file.write("@SP\n")
+            self.file.write("M=M-1\n")
+            # Pop first value
+            self.file.write("@SP\n")
+            self.file.write("A=M\n")
+            self.file.write("D=M\n")
+            # SP--
+            self.file.write("SP\n")
+            self.file.write("M=M-1\n")
+            # Add first value onto second value
+            self.file.write("A=M\n")
+            self.file.write("D=D+M\n")
+            self.file.write("M=D\n")
+            # SP++
+            self.file.write("@SP\n")
+            self.file.write("M=M+1\n")
+
         elif command == "sub":
-            pass
+            # SP--
+            self.file.write("@SP\n")
+            self.file.write("M=M-1\n")
+            # Pop first value
+            self.file.write("@SP\n")
+            self.file.write("A=M\n")
+            self.file.write("D=M\n")
+            # SP--
+            self.file.write("SP\n")
+            self.file.write("M=M-1\n")
+            # Subtract first value onto second value
+            self.file.write("A=M\n")
+            self.file.write("D=D-M\n")
+            self.file.write("M=D\n")
+            # SP++
+            self.file.write("@SP\n")
+            self.file.write("M=M+1\n")
+
         elif command == "neg":
+            # SP--
+
+            # 
+
+            # SP++
             pass
+
+
         elif command == "eq":
             pass
         elif command == "gt":
@@ -164,7 +205,13 @@ class CodeWriter:
             pass
         else:
             print(f"Incorrect line, should be a valid arithmetic command (add, sub, neg, eq, gt, lt, and, or, not): {command}")
-            exit()   
+            exit()  
+
+    def basicPush(self):
+        pass 
+
+    def basicPop(self):
+        pass
 
     # Write to output logically equivalent push/pop command.
     def writePushPop(self, command:str, segment: str, index: int) -> None:
@@ -184,7 +231,6 @@ class CodeWriter:
             # SP++
             self.file.write("@SP\n")
             self.file.write("M=M+1\n")
-            pass
         elif command == "pop":
             # addr=SEGMENT+i
             self.file.write(f"@{segment}\n")
