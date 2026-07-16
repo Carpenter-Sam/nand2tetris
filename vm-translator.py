@@ -228,12 +228,12 @@ class CodeWriter:
             self.file.write(f"D;JEQ\n")
         elif type == "gt":
             self.file.write(f"D;JGT\n")
-        elif type == "ls":
+        elif type == "lt":
             self.file.write(f"D;JLT\n")
         self.writePushPop("push", "constant", 1)
         self.file.write(f"@{self.file_strict}{type}END{self.egl}\n")
         self.file.write("0;JMP\n")
-        self.file.write(f"({self.file_strict}Eq{self.egl})\n")
+        self.file.write(f"({self.file_strict}{type}{self.egl})\n")
         self.writePushPop("push", "constant", 0)
         self.file.write(f"({self.file_strict}{type}END{self.egl})\n")
         self.egl += 1
