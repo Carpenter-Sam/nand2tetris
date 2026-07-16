@@ -152,7 +152,16 @@ class CodeWriter:
             self.addOrSub(False)
 
         elif command == "neg":
-            pass
+            self.file.write("@SP\n")
+            self.file.write("M=M-1\n")
+            self.file.write("@SP\n")
+            self.file.write("A=M\n")
+            self.file.write("D=M\n")
+            self.file.write("D=D-M\n")
+            self.file.write("D=D-M\n")
+            self.file.write("M=D\n")
+            self.file.write("@SP\n")
+            self.file.write("M=M+1\n")
 
         elif command == "eq":
             # equal if you subtract them from one another and get zero
