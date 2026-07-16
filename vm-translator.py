@@ -305,9 +305,22 @@ class CodeWriter:
                         exit() 
                     # pointer 0 = THIS, pointer 1 = THAT
                     if index == 0:
-                        self.lattAddr("THIS", 0)
+                        pointer = "THIS"
                     elif index == 1:
-                        self.lattAddr("THAT", 0)
+                        pointer = "THAT"
+                    else:
+                        print(f"Incorrect command, index must be 0 or 1 when referring to pointer segment: {command} {segment} {index}")
+                        exit() 
+
+                    if command == "push":
+                        self.pushPointer(pointer)
+                    elif command == "pop":
+                        self.popPointer(pointer)
+                    else:
+                        print(f"Incorrect command, must push or pop on pointer segment: {command} {segment} {index}")
+                        exit() 
+                    return
+            
                 case _:
                     print(f"Incorrect line, wrong segment: {command} {segment} {index}")
                     exit() 
@@ -354,6 +367,28 @@ class CodeWriter:
         self.file.write(f"@{index + 5}\n")
         self.file.write("D=A\n")
         self.file.write("@addr\n")
+        self.file.write("M=D\n")
+    
+    def pushPointer(self, pointer: str):
+        # *SP = THIS/THAT
+        self.file.write(f"@{pointer}\n")
+        self.file.write("D=M\n")
+        self.file.write("@SP\n")
+        self.file.write("A=M\n")
+        self.file.write("M=D\n")
+        # SP++
+        self.file.write("@SP\n")
+        self.file.write("M=M+1\n")
+    
+    def popPointer(self, pointer: str):
+        # SP--
+        self.file.write("@SP\n")
+        self.file.write("M=M-1\n")
+        # THIS/THAT = *SP
+        self.file.write("@SP\n")
+        self.file.write("A=M\n")
+        self.file.write("D=M\n")
+        self.file.write(f"@{pointer}\n")
         self.file.write("M=D\n")
 
     # Pushes value at location @addr onto stack
