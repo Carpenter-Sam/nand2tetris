@@ -178,10 +178,10 @@ class CodeWriter:
 
         # and, or, not assume that the value(s) checked on the stack are boolean (0 = True or 1 = False)
         elif command == "and": # due to the above assumption the and command is equivalent to eq
-            self.eglArithmetic("eq")
+            self.andOrLogic("and")
 
         elif command == "or":
-            pass
+            self.andOrLogic("or")
 
         elif command == "not":
             pass
@@ -265,7 +265,6 @@ class CodeWriter:
         # SP++
         self.file.write("@SP\n")
         self.file.write("M=M+1\n")
-        pass
 
     # Write to output logically equivalent push/pop command.
     def writePushPop(self, command:str, segment: str, index: int) -> None:
