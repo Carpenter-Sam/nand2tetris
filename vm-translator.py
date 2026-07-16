@@ -232,71 +232,39 @@ class CodeWriter:
 
         if command == "push":
             # addr=SEGMENT+i
-            self.file.write(f"@{translated_segment}\n")
-            self.file.write("D=M\n")
-            self.file.write(f"@{index}\n")
-            self.file.write("D=D+A\n")
-            self.file.write("@addr\n")
-            self.file.write("M=D\n")
-            # *SP=*addr
-            self.file.write("@addr\n")
-            self.file.write("D=M\n")
-            self.file.write("@0\n") # @SP
-            self.file.write("M=D\n")
-            # SP++
-            self.file.write("@0\n") # @SP
-            self.file.write("M=M+1\n")
+            
+            self.pushValue()
 
         elif command == "pop":
-            # addr=SEGMENT+i
-            self.file.write(f"@{translated_segment}\n")
-            self.file.write("D=M\n")
-            self.file.write(f"@{index}\n")
-            self.file.write("D=D+A\n")
-            self.file.write("@addr\n")
-            self.file.write("M=D\n")
-            # SP--
-            self.file.write("@0\n") # @SP
-            self.file.write("M=M-1\n")
-            # *addr=*SP
-            self.file.write("@0\n") # @SP
-            self.file.write("D=M\n")
-            self.file.write("@addr\n")
-            self.file.write("M=D\n")
+            self.popValue()
+
+
 
         else:
             print(f"Incorrect line, should be push or pop command: {command} {segment} {index}")
             exit()   
 
-    # Puts an already defined value (stored in D) on the stack
-    def pushValue(self, segment: str = "SP"):
-        # Puts value at base of local stack in D ready to have value pushed to
-        # self.file.write("@LCL\n")
-        # self.file.write("A=M\n")
-        # self.file.write("D=M\n")
-
-        # Put value on stack
+    # Pushes value at location @addr onto stack
+    def pushValue(self):
+        # Pushes value on stack
+        self.file.write("@addr\n")
+        self.file.write("@D=M\n")
         self.file.write("@SP\n")
-        self.file.write("A=M\n")
         self.file.write("M=D\n")
         # SP++
         self.file.write("@SP\n")
         self.file.write("M=M+1\n")
 
-    # Pops value, still requires value to be placed in specific location
-    def popValue(self, location: int):
+    # Pops value into location @addr
+    def popValue(self):
         # SP--
         self.file.write("@SP\n")
         self.file.write("M=M-1\n")
-        # Store value from stack ready in D
+        # Store value from stack in @addr
         self.file.write("@SP\n")
-        self.file.write("A=M\n") # Dereference SP
         self.file.write("D=M\n") # Place value at *SP in D
-
-        # Place value in specified location 
-        # self.file.write("@LCL\n")
-        # self.file.write("A=M\n")
-        # self.file.write("M=D\n")
+        self.file.write("@addr\n")
+        self.file.write("@M=D\n")
     
     # def translateSegment(self, segment: str):
     #     match segment:
