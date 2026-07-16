@@ -166,7 +166,7 @@ class CodeWriter:
 
         elif command == "eq":
             # equal if you subtract them from one another and get zero
-            pass
+            self.eqArithmetic()
 
         elif command == "gt":
             pass
@@ -196,7 +196,7 @@ class CodeWriter:
         self.file.write("A=M\n")
         self.file.write("D=M\n")
         # SP--
-        self.file.write("SP\n")
+        self.file.write("@SP\n")
         self.file.write("M=M-1\n")
         # Add/subtract first value onto second value
         self.file.write("A=M\n")
@@ -222,11 +222,12 @@ class CodeWriter:
 
         # pushes 0 if D == 0 (pop 2 and pop 1 are equal) else pushes 1
         self.file.write(f"@{self.file_strict}Eq{self.eq}\n")
-        self.file.write("push constant 1\n")
+        self.file.write(f"D;JEQ\n")
+        self.writePushPop("push", "constant", 1)
         self.file.write(f"@{self.file_strict}EqEND{self.eq}\n")
         self.file.write("0;JMP\n")
         self.file.write(f"({self.file_strict}Eq{self.eq})\n")
-        self.file.write("push constant 0\n")
+        self.writePushPop("push", "constant", 0)
         self.file.write(f"({self.file_strict}EqEND{self.eq})\n")
         self.eq += 1
 
@@ -287,7 +288,7 @@ class CodeWriter:
     
     def pushConstant(self, value: int): # Simply pushes constant
         # *SP = i
-        self.file.write("@{int}\n")
+        self.file.write(f"@{value}\n")
         self.file.write("D=A\n")
         self.file.write("@SP\n")
         self.file.write("A=M\n")
