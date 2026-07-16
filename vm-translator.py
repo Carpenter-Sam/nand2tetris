@@ -405,7 +405,7 @@ def main():
     
     # Runs until file ends
     while not parser.advance() and not parser.iteration_ended:
-        # print(parser.current_command, parser.current_command_type == CommandType.C_ARITHMETIC)
+        # print(parser.current_command, parser.current_command_type == CommandType.C_POP)
         if parser.current_command == "":
             # print(parser.current_command)
             # print(parser.current_command_arg1)
@@ -413,7 +413,7 @@ def main():
             pass
         elif parser.current_command_type == CommandType.C_ARITHMETIC:
             writer.writeArithmetic(parser.current_command)
-        elif parser.current_command_type == CommandType.C_PUSH or parser.current_command_type == CommandType.C_PUSH:
+        elif parser.current_command_type == CommandType.C_PUSH or parser.current_command_type == CommandType.C_POP:
             writer.writePushPop(parser.current_command, parser.current_command_arg1, parser.current_command_arg2)
 
 if __name__ == "__main__":
