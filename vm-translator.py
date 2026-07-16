@@ -184,7 +184,24 @@ class CodeWriter:
             self.andOrLogic("or")
 
         elif command == "not":
-            pass
+            # SP--
+            self.file.write("@SP\n")
+            self.file.write("M=M-1\n")
+            # Pop value
+            self.file.write("@SP\n")
+            self.file.write("A=M\n")
+            self.file.write("D=M\n")
+            # Invert value
+            self.file.write("D=-D\n")
+            # Add 1 to value
+            self.file.write("D=D+1\n")
+            # Push value
+            self.file.write("@SP\n")
+            self.file.write("A=M\n")
+            self.file.write("M=D\n")
+            # SP++
+            self.file.write("@SP\n")
+            self.file.write("M=M+1\n")
 
         else:
             print(f"Incorrect line, should be a valid arithmetic command (add, sub, neg, eq, gt, lt, and, or, not): {command}")
