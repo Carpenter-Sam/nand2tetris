@@ -451,6 +451,7 @@ class CodeWriter:
     def writeCall(self, functionName: str, numArgs: int):
         # push returnAddress // (using label declared below)
         self.file.write("\n")
+
         # push LCL
 
         # push ARG
@@ -529,6 +530,13 @@ class CodeWriter:
         # goto retAddr // return address
         self.file.write("@retAddr\n")
         self.file.write("0;JMP\n")
+        # BUG: Potential error involving the return address. Return address is placed directly on the stack 
+        # so I may have to nab it off of there instead.
+    
+    def translateLabel(self, label: str):
+        return label
+        # BUG: The goto, if-goto and label commands are buggy as they do no produce the full label as required.
+        # Xxx.foo$bar where Xxx = VM file name, foo = function name, bar = label
         
 
 def main():
@@ -548,11 +556,11 @@ def main():
         elif parser.current_command_type == CommandType.C_PUSH or parser.current_command_type == CommandType.C_POP:
             writer.writePushPop(parser.current_command, parser.current_command_arg1, parser.current_command_arg2)
         elif parser.current_command_type == CommandType.C_LABEL:
-            writer.writeLabel(parser.current_command_arg1)
+            writer.writeLabel(writer.translateLabel(parser.current_command_arg1))
         elif parser.current_command_type == CommandType.C_GOTO:
-            writer.writeGoto(parser.current_command_arg1)
+            writer.writeGoto(writer.translateLabel(parser.current_command_arg1))
         elif parser.current_command_type == CommandType.C_IF:
-            writer.writeIf(parser.current_command_arg1)
+            writer.writeIf(writer.translateLabel(parser.current_command_arg1))
         elif parser.current_command_type == CommandType.C_FUNCTION:
             writer.writeFunction(parser.current_command_arg1, parser.current_command_arg2)
         elif parser.current_command_type == CommandType.C_RETURN:
