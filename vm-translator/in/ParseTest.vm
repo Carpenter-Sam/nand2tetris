@@ -1,3 +1,6 @@
-goto test
-if-goto test
-label test
+function name 0
+return
+call name 0
+call name 0
+call name 0
+call name 0

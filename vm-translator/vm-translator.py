@@ -135,7 +135,7 @@ class CodeWriter:
             self.current_function = ""
 
             self.egl = 0
-            self.call = 0
+            self.call = -1
         except:
             print("Error occured while creating/opening file: " + filename)
             exit()   
