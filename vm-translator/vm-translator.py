@@ -424,7 +424,7 @@ class CodeWriter:
         pass
 
     def writeLabel(self, label: str):
-        pass
+        self.file.write(f"@{label}\n")
 
     def writeGoto(self, label: str):
         pass
