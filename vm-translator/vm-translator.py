@@ -524,37 +524,15 @@ class CodeWriter:
         self.file.write("M=D\n")
         self.file.write("M=M+1\n")
 
-        # THAT = *(endFrame - 1) // restores THAT
-        self.file.write("@endFrame\n")
-        self.file.write("D=M\n")
-        self.file.write("@1\n")
-        self.file.write("D=D-A\n")
-        self.file.write("@THAT\n")
-        self.file.write("M=D\n")
-
-        # THIS = *(endFrame - 2) // restores THIS
-        self.file.write("@endFrame\n")
-        self.file.write("D=M\n")
-        self.file.write("@2\n")
-        self.file.write("D=D-A\n")
-        self.file.write("@THIS\n")
-        self.file.write("M=D\n")
-
-        # ARG = *(endFrame - 3) // restores ARG
-        self.file.write("@endFrame\n")
-        self.file.write("D=M\n")
-        self.file.write("@3\n")
-        self.file.write("D=D-A\n")
-        self.file.write("@ARG\n")
-        self.file.write("M=D\n")
-
-        # LCL = *(endFrame - 4) // restores LCL
-        self.file.write("@endFrame\n")
-        self.file.write("D=M\n")
-        self.file.write("@4\n")
-        self.file.write("D=D-A\n")
-        self.file.write("@LCL\n")
-        self.file.write("M=D\n")
+        # Restores THAT, THIS, ARG and finally LCL
+        for i in [("THAT", 1), ("THIS", 2), ("ARG", 3), ("LCL", 4)]:
+            # i[0] = *(endFrame - i[1]) // restores THAT
+            self.file.write("@endFrame\n")
+            self.file.write("D=M\n")
+            self.file.write(f"@{i[1]}\n")
+            self.file.write("D=D-A\n")
+            self.file.write(f"@{i[0]}\n")
+            self.file.write("M=D\n")
 
         # goto retAddr // return address
         self.file.write("@retAddr\n")
