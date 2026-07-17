@@ -71,7 +71,7 @@ class Parser:
                 return CommandType("C_LABEL")
             case "goto":
                 return CommandType("C_GOTO")
-            case "if ":
+            case "if-goto":
                 return CommandType("C_IF")
             case "function":
                 return CommandType("C_FUNCTION")
@@ -424,7 +424,7 @@ def main():
     
     # Runs until file ends
     while not parser.advance() and not parser.iteration_ended:
-        # print(parser.current_command, parser.current_command_type == CommandType.C_POP)
+        print(parser.current_command, parser.current_command_arg1, parser.current_command_arg2, parser.current_command_type)
         if parser.current_command == "":
             # print(parser.current_command)
             # print(parser.current_command_arg1)
