@@ -135,6 +135,7 @@ class CodeWriter:
             self.current_function = ""
 
             self.egl = 0
+            self.call = 0
         except:
             print("Error occured while creating/opening file: " + filename)
             exit()   
@@ -452,6 +453,7 @@ class CodeWriter:
 
     def writeCall(self, functionName: str, numArgs: int):
         # push returnAddress // (using label declared below)
+        self.file.write(f"@{self}\n")
         self.file.write("\n")
 
         # push LCL
@@ -532,12 +534,15 @@ class CodeWriter:
         # goto retAddr // return address
         self.file.write("@retAddr\n")
         self.file.write("0;JMP\n")
-        # BUG: Potential error involving the return address. Return address is placed directly on the stack 
-        # so I may have to nab it off of there instead.
     
     def translateLabel(self, label: str):
         # Xxx.foo$bar where Xxx = VM file name, foo = function name, bar = label
         return "{Xxx}.{foo}${bar}".format(Xxx = self.file_strict, foo = self.current_function, bar = label)
+    
+    def translateReturnName(self, functionName: str):
+        # Xxx.foo$ret.i where Xxx = VM file name, foo = function name, i = running tally
+        self.call += 1
+        return "{Xxx}.{foo}$ret.{i}".format(Xxx = self.file_strict, foo = functionName, i = self.call)
         
 
 def main():
