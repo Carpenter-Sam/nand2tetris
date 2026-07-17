@@ -1,5 +1,6 @@
 from enum import Enum
 import sys
+from os import listdir
 
 class CommandType(Enum):
     C_ARITHMETIC = "C_ARITHMETIC"
@@ -562,17 +563,6 @@ class CodeWriter:
         
 
 def main():
-    # Either .vm or directory
-    # If .vm append it to files and go
-    # If directory,
-        # Iterate through files in that directory ending with .vm
-        # Search for a Main.vm, and stop if there isn't one
-        # Create a list of all the files starting with Main.vm
-    # Create a CodeWriter with appropriate name (either filename.vm or directoryname)
-        # If directory, then execute boot code
-    # Loop through files
-        # Each new file create a new parser and change the current filename of the codewriter
-
     files = []
 
     split_filename = sys.argv[1].split(".")
@@ -580,10 +570,18 @@ def main():
     files.append(split_filename[0])
     if len(split_filename) == 0:
         # directory
-        # check for a Main.vm in the directory
-        # check for a main function in the directory
-        # loop through the files in the directory and append them to files (assuming .vm & not Main.vm)
-        pass
+        files.append("Main")
+        main_file = False
+        for file in listdir(split_filename[0]): # check for a Main.vm in the directory
+            if file.endswith(".vm") and file == "Main.vm":
+                main_file = True
+                # optionally check for a main function in the directory
+            elif file.endswith(".vm"): # append .vm files that aren't Main.vm
+                files.append(file.split(".")[0])
+
+        if not main_file:
+            print(f"ERROR, no Main.vm inside specified directory: {split_filename[0]}")
+            exit() 
     elif split_filename[-1] == "vm": 
         # file
         pass
