@@ -451,7 +451,7 @@ class CodeWriter:
 
     def writeFunction(self, functionName: str, numVars: int):
         # (fileName.functionName)
-        self.file.write(f"@{self.file_strict}.{functionName}\n")
+        self.file.write(f"({self.file_strict}.{functionName})\n")
         self.current_function = functionName
         # repeat nVars times: push 0
         for i in range(numVars):
