@@ -557,7 +557,6 @@ def main():
         elif parser.current_command_type == CommandType.C_PUSH or parser.current_command_type == CommandType.C_POP:
             writer.writePushPop(parser.current_command, parser.current_command_arg1, parser.current_command_arg2)
         elif parser.current_command_type == CommandType.C_LABEL:
-            print(writer.translateLabel(parser.current_command_arg1))
             writer.writeLabel(writer.translateLabel(parser.current_command_arg1))
         elif parser.current_command_type == CommandType.C_GOTO:
             writer.writeGoto(writer.translateLabel(parser.current_command_arg1))
