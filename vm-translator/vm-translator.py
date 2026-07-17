@@ -127,12 +127,12 @@ class Parser:
             return -1
 
 class CodeWriter:
-    def __init__(self, filename: str, starting_file: str):
+    def __init__(self, filename: str):
 
         # Open file
         try:
             self.file = open(filename, "w")
-            self.current_filename = starting_file
+            self.current_filename = ""
             self.current_function = ""
 
             self.egl = 0
@@ -569,40 +569,58 @@ def main():
         # Search for a Main.vm, and stop if there isn't one
         # Create a list of all the files starting with Main.vm
     # Create a CodeWriter with appropriate name (either filename.vm or directoryname)
+        # If directory, then execute boot code
     # Loop through files
         # Each new file create a new parser and change the current filename of the codewriter
 
-
     files = []
 
-    parser = Parser("in/" + sys.argv[1] + ".vm")
-    writer = CodeWriter("out/" + sys.argv[1] + ".asm", sys.argv[1])
+    split_filename = sys.argv[1].split(".")
+    writer = CodeWriter("out/" + split_filename[0] + ".asm")
+    files.append(split_filename[0])
+    if len(split_filename) == 0:
+        # directory
+        # check for a Main.vm in the directory
+        # check for a main function in the directory
+        # loop through the files in the directory and append them to files (assuming .vm & not Main.vm)
+        pass
+    elif split_filename[-1] == "vm": 
+        # file
+        pass
+    else:
+        print("USAGE: py vm-translator file.vm|directory")
+        exit() 
     
-    # Runs until file ends
-    while not parser.advance() and not parser.iteration_ended:
-        print(parser.current_command, parser.current_command_arg1, parser.current_command_arg2, parser.current_command_type)
-        if parser.current_command == "":
-            # print(parser.current_command)
-            # print(parser.current_command_arg1)
-            # print(parser.current_command_arg2, "\n")
-            print(f"Incorrect line, unrecognised command: {parser.current_command} {parser.current_command_arg1} {parser.current_command_arg2}")
-            exit()   
-        elif parser.current_command_type == CommandType.C_ARITHMETIC:
-            writer.writeArithmetic(parser.current_command)
-        elif parser.current_command_type == CommandType.C_PUSH or parser.current_command_type == CommandType.C_POP:
-            writer.writePushPop(parser.current_command, parser.current_command_arg1, parser.current_command_arg2)
-        elif parser.current_command_type == CommandType.C_LABEL:
-            writer.writeLabel(writer.translateLabel(parser.current_command_arg1))
-        elif parser.current_command_type == CommandType.C_GOTO:
-            writer.writeGoto(writer.translateLabel(parser.current_command_arg1))
-        elif parser.current_command_type == CommandType.C_IF:
-            writer.writeIf(writer.translateLabel(parser.current_command_arg1))
-        elif parser.current_command_type == CommandType.C_FUNCTION:
-            writer.writeFunction(parser.current_command_arg1, parser.current_command_arg2)
-        elif parser.current_command_type == CommandType.C_RETURN:
-            writer.writeReturn()
-        elif parser.current_command_type == CommandType.C_CALL:
-            writer.writeCall(parser.current_command_arg1, parser.current_command_arg2)
+    for file in files:
+        # Runs until file ends
+        parser = Parser(file + ".vm")
+        writer.setFileName(file)
+
+        while not parser.advance() and not parser.iteration_ended:
+            print(parser.current_command, parser.current_command_arg1, parser.current_command_arg2, parser.current_command_type)
+            if parser.current_command == "":
+                # print(parser.current_command)
+                # print(parser.current_command_arg1)
+                # print(parser.current_command_arg2, "\n")
+                print(f"Incorrect line, unrecognised command: {parser.current_command} {parser.current_command_arg1} {parser.current_command_arg2}")
+                exit()   
+            elif parser.current_command_type == CommandType.C_ARITHMETIC:
+                writer.writeArithmetic(parser.current_command)
+            elif parser.current_command_type == CommandType.C_PUSH or parser.current_command_type == CommandType.C_POP:
+                writer.writePushPop(parser.current_command, parser.current_command_arg1, parser.current_command_arg2)
+            elif parser.current_command_type == CommandType.C_LABEL:
+                writer.writeLabel(writer.translateLabel(parser.current_command_arg1))
+            elif parser.current_command_type == CommandType.C_GOTO:
+                writer.writeGoto(writer.translateLabel(parser.current_command_arg1))
+            elif parser.current_command_type == CommandType.C_IF:
+                writer.writeIf(writer.translateLabel(parser.current_command_arg1))
+            elif parser.current_command_type == CommandType.C_FUNCTION:
+                writer.writeFunction(parser.current_command_arg1, parser.current_command_arg2)
+            elif parser.current_command_type == CommandType.C_RETURN:
+                writer.writeReturn()
+            elif parser.current_command_type == CommandType.C_CALL:
+                writer.writeCall(parser.current_command_arg1, parser.current_command_arg2)
+    print("Successfully executed.")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
