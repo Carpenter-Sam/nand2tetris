@@ -442,9 +442,29 @@ class CodeWriter:
         self.file.write("D;JGT\n")
 
     def writeFunction(self, functionName: str, numVars: int):
-        pass
+        # (functionName)
+        self.file.write(f"@{functionName}\n")
+        # repeat nVars times: push 0
+        for i in range(numVars):
+            self.pushConstant(0)
 
     def writeCall(self, functionName: str, numArgs: int):
+        # endFrame = LCL // endframe is a temp var
+
+        # retAddr = *(endFrame - 5) // get return address
+
+        # *ARG = pop() // repositions the return value for the caller, aka arg 0 = top value
+
+        # SP = ARG + 1 // repositions SP
+        # THAT = *(endFrame - 1) // restores THAT
+
+        # THIS = *(endFrame - 2) // restores THIS
+
+        # ARG = *(endFrame - 3) // restores ARG
+
+        # LCL = *(endFrame - 4) // restores LCL
+
+        # goto retAddr // return address
         pass
 
     def writeReturn(self):
@@ -473,6 +493,12 @@ def main():
             writer.writeGoto(parser.current_command_arg1)
         elif parser.current_command_type == CommandType.C_IF:
             writer.writeIf(parser.current_command_arg1)
+        elif parser.current_command_type == CommandType.C_FUNCTION:
+            writer.writeFunction(parser.current_command_arg1, parser.current_command_arg2)
+        elif parser.current_command_type == CommandType.C_RETURN:
+            writer.writeReturn()
+        elif parser.current_command_type == CommandType.C_CALL:
+            writer.writeCall(parser.current_command_arg1, parser.current_command_arg2)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
