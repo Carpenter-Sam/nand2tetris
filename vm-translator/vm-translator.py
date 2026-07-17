@@ -439,7 +439,7 @@ class CodeWriter:
         self.file.write("D=M\n")
         # Jump if equal
         self.file.write(f"@{label}\n")
-        self.file.write("D;JLT\n")
+        self.file.write("D;JGT\n")
 
     def writeFunction(self, functionName: str, numVars: int):
         pass
