@@ -442,8 +442,8 @@ class CodeWriter:
         self.file.write("D;JGT\n")
 
     def writeFunction(self, functionName: str, numVars: int):
-        # (functionName)
-        self.file.write(f"@{functionName}\n")
+        # (fileName.functionName)
+        self.file.write(f"@{self.file_strict}.{functionName}\n")
         # repeat nVars times: push 0
         for i in range(numVars):
             self.pushConstant(0)
