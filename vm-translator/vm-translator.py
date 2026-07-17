@@ -423,7 +423,13 @@ class CodeWriter:
         pass
 
     def writeInit(self):
-        pass
+        # SP = 256
+        self.file.write("@256\n")
+        self.file.write("D=A\n")
+        self.file.write("@SP\n")
+        self.file.write("M=D\n")
+        # Call Sys.init
+        self.writeCall("Sys.init", 0)
 
     def writeLabel(self, label: str):
         self.file.write(f"({label})\n")
