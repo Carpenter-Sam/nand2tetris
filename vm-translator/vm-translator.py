@@ -450,7 +450,7 @@ class CodeWriter:
 
     def writeCall(self, functionName: str, numArgs: int):
         # push returnAddress // (using label declared below)
-        
+        self.file.write("\n")
         # push LCL
 
         # push ARG
@@ -471,22 +471,63 @@ class CodeWriter:
 
     def writeReturn(self):
         # endFrame = LCL // endframe is a temp var
+        self.file.write("@LCL\n")
+        self.file.write("D=M\n")
+        self.file.write("@endFrame\n")
+        self.file.write("M=D\n")
 
         # retAddr = *(endFrame - 5) // get return address
+        self.file.write("@endFrame\n")
+        self.file.write("D=M\n")
+        self.file.write("@5\n")
+        self.file.write("D=D-A\n")
+        self.file.write("@retAddr\n")
+        self.file.write("M=D\n")
 
         # *ARG = pop() // repositions the return value for the caller, aka arg 0 = top value
+        self.writePushPop("pop", "argument", 0)
 
         # SP = ARG + 1 // repositions SP
+        self.file.write("@ARG\n")
+        self.file.write("D=M\n")
+        self.file.write("@SP\n")
+        self.file.write("M=D\n")
+        self.file.write("M=M+1\n")
+
         # THAT = *(endFrame - 1) // restores THAT
+        self.file.write("@endFrame\n")
+        self.file.write("D=M\n")
+        self.file.write("@1\n")
+        self.file.write("D=D-A\n")
+        self.file.write("@THAT\n")
+        self.file.write("M=D\n")
 
         # THIS = *(endFrame - 2) // restores THIS
+        self.file.write("@endFrame\n")
+        self.file.write("D=M\n")
+        self.file.write("@2\n")
+        self.file.write("D=D-A\n")
+        self.file.write("@THIS\n")
+        self.file.write("M=D\n")
 
         # ARG = *(endFrame - 3) // restores ARG
+        self.file.write("@endFrame\n")
+        self.file.write("D=M\n")
+        self.file.write("@3\n")
+        self.file.write("D=D-A\n")
+        self.file.write("@ARG\n")
+        self.file.write("M=D\n")
 
         # LCL = *(endFrame - 4) // restores LCL
+        self.file.write("@endFrame\n")
+        self.file.write("D=M\n")
+        self.file.write("@4\n")
+        self.file.write("D=D-A\n")
+        self.file.write("@LCL\n")
+        self.file.write("M=D\n")
 
         # goto retAddr // return address
-        pass
+        
         
 
 def main():
