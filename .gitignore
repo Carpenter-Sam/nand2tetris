@@ -1,0 +1,7 @@
+/assembler/target
+/assembler/output.txt
+
+vm-translator/out/*
+vm-translator/.vscode/*
+
+.vscode/*
