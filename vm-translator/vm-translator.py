@@ -424,10 +424,11 @@ class CodeWriter:
         pass
 
     def writeLabel(self, label: str):
-        self.file.write(f"@{label}\n")
+        self.file.write(f"({label})\n")
 
     def writeGoto(self, label: str):
-        pass
+        self.file.write(f"@{label}\n")
+        self.file.write("0;JMP\n")
 
     def writeIf(self, label: str):
         pass
