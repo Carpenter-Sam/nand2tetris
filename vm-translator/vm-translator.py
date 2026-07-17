@@ -449,6 +449,27 @@ class CodeWriter:
             self.pushConstant(0)
 
     def writeCall(self, functionName: str, numArgs: int):
+        # push returnAddress // (using label declared below)
+        
+        # push LCL
+
+        # push ARG
+
+        # push THIS
+
+        # push THAT
+
+        # ARG = SP - 5 - nArgs
+
+        # LCL = SP
+
+        # goto functionName
+
+        # (returnAddress)
+
+        pass
+
+    def writeReturn(self):
         # endFrame = LCL // endframe is a temp var
 
         # retAddr = *(endFrame - 5) // get return address
@@ -465,9 +486,6 @@ class CodeWriter:
         # LCL = *(endFrame - 4) // restores LCL
 
         # goto retAddr // return address
-        pass
-
-    def writeReturn(self):
         pass
         
 
