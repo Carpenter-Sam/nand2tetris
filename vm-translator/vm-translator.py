@@ -453,24 +453,43 @@ class CodeWriter:
 
     def writeCall(self, functionName: str, numArgs: int):
         # push returnAddress // (using label declared below)
-        self.file.write(f"@{self}\n")
-        self.file.write("\n")
+        self.file.write(f"@{self.translateReturnName(functionName)}\n")
+        self.file.write("D=A\n")
+        self.file.write("@SP\n")
+        self.file.write("A=M\n")
+        self.file.write("D=M\n")
+        self.file.write("@SP\n")
+        self.file.write("M=M+1\n")
 
-        # push LCL
-
-        # push ARG
-
-        # push THIS
-
-        # push THAT
+        # push LCL, ARG, THIS and then THAT
+        for i in ["LCL", "ARG", "THIS", "THAT"]:
+            self.file.write(f"@{i}\n")
+            self.file.write("D=M\n")
+            self.file.write("@addr\n")
+            self.file.write("M=D\n")
+            self.pushValue()
 
         # ARG = SP - 5 - nArgs
+        self.file.write("@SP\n")
+        self.file.write("D=M\n")
+        self.file.write("@5\n")
+        self.file.write("D=D-A\n")
+        self.file.write(f"@{numArgs}\n")
+        self.file.write("D=D-A\n")
+        self.file.write("@ARG\n")
+        self.file.write("M=D\n")
 
         # LCL = SP
+        self.file.write("@SP\n")
+        self.file.write("D=M\n")
+        self.file.write("@LCL\n")
+        self.file.write("M=D\n")
 
         # goto functionName
+        self.writeGoto(functionName)
 
         # (returnAddress)
+        self.file.write(f"({self.translateReturnName(functionName)})\n")
 
         pass
 
