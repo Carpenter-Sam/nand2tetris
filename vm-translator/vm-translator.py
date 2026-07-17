@@ -156,7 +156,7 @@ class CodeWriter:
             self.addOrSub(False)
 
         elif command == "neg":
-            self.file.write("@SP\n")
+            self.file.write("@SP // neg\n")
             self.file.write("M=M-1\n")
             self.file.write("@SP\n")
             self.file.write("A=M\n")
@@ -187,7 +187,7 @@ class CodeWriter:
 
         elif command == "not":
             # SP--
-            self.file.write("@SP\n")
+            self.file.write("@SP // not\n")
             self.file.write("M=M-1\n")
             # Not value
             self.file.write("@0\n")
@@ -203,7 +203,7 @@ class CodeWriter:
 
     def addOrSub(self, adding: bool):
         # SP--
-        self.file.write("@SP\n")
+        self.file.write("@SP // add or sub\n")
         self.file.write("M=M-1\n")
         # Pop first value
         self.file.write("@SP\n")
@@ -215,15 +215,16 @@ class CodeWriter:
         # Add/subtract first value onto second value
         self.file.write("A=M\n")
         if adding:
-            self.file.write("D=D+M\n")
+            self.file.write("D=D+M // it's add\n")
         else:
-            self.file.write("D=M-D\n")
+            self.file.write("D=M-D // it's sub\n")
         self.file.write("M=D\n")
         # SP++
         self.file.write("@SP\n")
         self.file.write("M=M+1\n")
     
     def eglArithmetic(self, type: str):
+        self.file.write(f"// {type}\n")
         self.addOrSub(False) # subtract top two values
 
         # SP--
@@ -252,7 +253,7 @@ class CodeWriter:
     
     def andOrLogic(self, type: str):
         # SP--
-        self.file.write("@SP\n")
+        self.file.write(f"@SP // {type}\n")
         self.file.write("M=M-1\n")
         # Store in D
         self.file.write("@SP\n")
@@ -295,7 +296,7 @@ class CodeWriter:
                     self.pushConstant(index)
                     return
                 case "static":
-                    self.constantAddr(index)
+                    self.staticAddr(index)
                 case "temp":
                     if index > 7:
                         print(f"Out of bounds temp segment. There are only 8 temp segments (starts at temp 0): {command} {segment} {index}")
@@ -315,8 +316,10 @@ class CodeWriter:
                         exit() 
 
                     if command == "push":
+                        self.file.write("// pushing pointer\n")
                         self.pushPointer(pointer)
                     elif command == "pop":
+                        self.file.write("// popping pointer\n")
                         self.popPointer(pointer)
                     else:
                         print(f"Incorrect command, must push or pop on pointer segment: {command} {segment} {index}")
@@ -338,7 +341,7 @@ class CodeWriter:
             exit()   
     
     def lattAddr(self, translated_segment: str, index: int):
-        self.file.write(f"@{translated_segment}\n")
+        self.file.write(f"@{translated_segment} // storing {translated_segment} ready for pop/push\n")
         self.file.write("D=M\n")
         self.file.write(f"@{index}\n")
         self.file.write("D=D+A\n")
@@ -347,6 +350,7 @@ class CodeWriter:
     
     def pushConstant(self, value: int): # Simply pushes constant
         # *SP = i
+        self.file.write(f"// pushing constant value {value}\n")
         if value == -1:
             self.file.write("A=-1\n")
         else:
@@ -359,14 +363,14 @@ class CodeWriter:
         self.file.write("@SP\n")
         self.file.write("M=M+1\n")
     
-    def constantAddr(self, index: int): # Puts location of constant into addr
-        self.file.write(f"@{self.file_strict}.{index}\n")
+    def staticAddr(self, index: int): # Puts location of static into addr
+        self.file.write(f"@{self.file_strict}.{index} // preparing location of a static\n")
         self.file.write("D=A\n")
         self.file.write("@addr\n")
         self.file.write("M=D\n")
     
     def tempAddr(self, index: int):
-        self.file.write(f"@{index + 5}\n")
+        self.file.write(f"@{index + 5}\n // preparing location of temp\n")
         self.file.write("D=A\n")
         self.file.write("@addr\n")
         self.file.write("M=D\n")
@@ -396,7 +400,7 @@ class CodeWriter:
     # Pushes value at location @addr onto stack
     def pushValue(self):
         # Pushes value on stack
-        self.file.write("@addr\n")
+        self.file.write("@addr // push onto addr\n")
         self.file.write("A=M\n")
         self.file.write("D=M\n")
         self.file.write("@SP\n")
@@ -409,7 +413,7 @@ class CodeWriter:
     # Pops value into location @addr
     def popValue(self):
         # SP--
-        self.file.write("@SP\n")
+        self.file.write("@SP // pop onto addr\n")
         self.file.write("M=M-1\n")
         # Store value from stack in @addr
         self.file.write("@SP\n")
@@ -424,7 +428,7 @@ class CodeWriter:
 
     def writeInit(self):
         # SP = 256
-        self.file.write("@256\n")
+        self.file.write("@256 // bootstrap\n")
         self.file.write("D=A\n")
         self.file.write("@SP\n")
         self.file.write("M=D\n")
@@ -440,7 +444,7 @@ class CodeWriter:
 
     def writeIf(self, label: str):
         # SP--
-        self.file.write("@SP\n")
+        self.file.write(f"@SP // if-goto {label}\n")
         self.file.write("M=M-1\n")
         # Place value in D
         self.file.write("A=M\n")
@@ -451,7 +455,7 @@ class CodeWriter:
 
     def writeFunction(self, functionName: str, numVars: int):
         # (fileName.functionName)
-        self.file.write(f"({self.file_strict}.{functionName})\n")
+        self.file.write(f"({self.file_strict}.{functionName}) // function {functionName} {numVars}\n")
         self.current_function = functionName
         # repeat nVars times: push 0
         for i in range(numVars):
@@ -459,7 +463,8 @@ class CodeWriter:
 
     def writeCall(self, functionName: str, numArgs: int):
         # push returnAddress // (using label declared below)
-        self.file.write(f"@{self.translateReturnName(functionName)}\n")
+        self.file.write(f"// start of call {functionName} {numArgs}\n")
+        self.file.write(f"@{self.translateReturnName(functionName)} // push returnAddress\n")
         self.file.write("D=A\n")
         self.file.write("@SP\n")
         self.file.write("A=M\n")
@@ -469,14 +474,14 @@ class CodeWriter:
 
         # push LCL, ARG, THIS and then THAT
         for i in ["LCL", "ARG", "THIS", "THAT"]:
-            self.file.write(f"@{i}\n")
+            self.file.write(f"@{i} // push {i}\n")
             self.file.write("D=M\n")
             self.file.write("@addr\n")
             self.file.write("M=D\n")
             self.pushValue()
 
         # ARG = SP - 5 - nArgs
-        self.file.write("@SP\n")
+        self.file.write("@SP // ARG = SP - 5 - nArgs\n")
         self.file.write("D=M\n")
         self.file.write("@5\n")
         self.file.write("D=D-A\n")
@@ -486,7 +491,7 @@ class CodeWriter:
         self.file.write("M=D\n")
 
         # LCL = SP
-        self.file.write("@SP\n")
+        self.file.write("@SP // LCL = SP\n")
         self.file.write("D=M\n")
         self.file.write("@LCL\n")
         self.file.write("M=D\n")
@@ -495,19 +500,20 @@ class CodeWriter:
         self.writeGoto(functionName)
 
         # (returnAddress)
-        self.file.write(f"({self.translateReturnName(functionName)})\n")
+        self.file.write(f"({self.translateReturnName(functionName)}) // (returnAddress)\n")
+        self.file.write(f"// end of call {functionName} {numArgs}\n")
 
-        pass
 
     def writeReturn(self):
         # endFrame = LCL // endframe is a temp var
-        self.file.write("@LCL\n")
+        self.file.write("// start of return\n")
+        self.file.write("@LCL // endFrame = LCL\n")
         self.file.write("D=M\n")
         self.file.write("@endFrame\n")
         self.file.write("M=D\n")
 
         # retAddr = *(endFrame - 5) // get return address
-        self.file.write("@endFrame\n")
+        self.file.write("@endFrame // retAddr = *(endFrame - 5)\n")
         self.file.write("D=M\n")
         self.file.write("@5\n")
         self.file.write("D=D-A\n")
@@ -518,7 +524,7 @@ class CodeWriter:
         self.writePushPop("pop", "argument", 0)
 
         # SP = ARG + 1 // repositions SP
-        self.file.write("@ARG\n")
+        self.file.write("@ARG // SP = ARG + 1\n")
         self.file.write("D=M\n")
         self.file.write("@SP\n")
         self.file.write("M=D\n")
@@ -527,7 +533,7 @@ class CodeWriter:
         # Restores THAT, THIS, ARG and finally LCL
         for i in [("THAT", 1), ("THIS", 2), ("ARG", 3), ("LCL", 4)]:
             # i[0] = *(endFrame - i[1]) // restores THAT
-            self.file.write("@endFrame\n")
+            self.file.write(f"@endFrame // {i[0]} = *(endFrame - {i[1]})\n")
             self.file.write("D=M\n")
             self.file.write(f"@{i[1]}\n")
             self.file.write("D=D-A\n")
@@ -535,9 +541,10 @@ class CodeWriter:
             self.file.write("M=D\n")
 
         # goto retAddr // return address
-        self.file.write("@retAddr\n")
+        self.file.write("@retAddr // goto retAddr\n")
         self.file.write("0;JMP\n")
-    
+        self.file.write("// end of return\n")   
+
     def translateLabel(self, label: str):
         # Xxx.foo$bar where Xxx = VM file name, foo = function name, bar = label
         return "{Xxx}.{foo}${bar}".format(Xxx = self.file_strict, foo = self.current_function, bar = label)
