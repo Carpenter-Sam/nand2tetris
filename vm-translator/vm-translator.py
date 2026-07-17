@@ -127,11 +127,12 @@ class Parser:
             return -1
 
 class CodeWriter:
-    def __init__(self, filename: str, filename_strict: str):
+    def __init__(self, filename: str, starting_file: str):
+
         # Open file
         try:
             self.file = open(filename, "w")
-            self.file_strict = filename_strict
+            self.current_filename = starting_file
             self.current_function = ""
 
             self.egl = 0
@@ -236,7 +237,7 @@ class CodeWriter:
         self.file.write("D=M\n")
 
         # pushes -1 if result is true else pushes 0
-        self.file.write(f"@{self.file_strict}{type}{self.egl}\n")
+        self.file.write(f"@{self.current_filename}{type}{self.egl}\n")
         if type == "eq":
             self.file.write(f"D;JEQ\n")
         elif type == "gt":
@@ -244,11 +245,11 @@ class CodeWriter:
         elif type == "lt":
             self.file.write(f"D;JLT\n")
         self.writePushPop("push", "constant", 0)
-        self.file.write(f"@{self.file_strict}{type}END{self.egl}\n")
+        self.file.write(f"@{self.current_filename}{type}END{self.egl}\n")
         self.file.write("0;JMP\n")
-        self.file.write(f"({self.file_strict}{type}{self.egl})\n")
+        self.file.write(f"({self.current_filename}{type}{self.egl})\n")
         self.writePushPop("push", "constant", -1)
-        self.file.write(f"({self.file_strict}{type}END{self.egl})\n")
+        self.file.write(f"({self.current_filename}{type}END{self.egl})\n")
         self.egl += 1
     
     def andOrLogic(self, type: str):
@@ -364,7 +365,7 @@ class CodeWriter:
         self.file.write("M=M+1\n")
     
     def staticAddr(self, index: int): # Puts location of static into addr
-        self.file.write(f"@{self.file_strict}.{index} // preparing location of a static\n")
+        self.file.write(f"@{self.current_filename}.{index} // preparing location of a static\n")
         self.file.write("D=A\n")
         self.file.write("@addr\n")
         self.file.write("M=D\n")
@@ -424,7 +425,7 @@ class CodeWriter:
         self.file.write("M=D\n")
 
     def setFileName(self, fileName: str):
-        pass
+        self.current_filename = fileName
 
     def writeInit(self):
         # SP = 256
@@ -455,7 +456,7 @@ class CodeWriter:
 
     def writeFunction(self, functionName: str, numVars: int):
         # (fileName.functionName)
-        self.file.write(f"({self.file_strict}.{functionName}) // function {functionName} {numVars}\n")
+        self.file.write(f"({self.current_filename}.{functionName}) // function {functionName} {numVars}\n")
         self.current_function = functionName
         # repeat nVars times: push 0
         for i in range(numVars):
@@ -552,12 +553,12 @@ class CodeWriter:
 
     def translateLabel(self, label: str):
         # Xxx.foo$bar where Xxx = VM file name, foo = function name, bar = label
-        return "{Xxx}.{foo}${bar}".format(Xxx = self.file_strict, foo = self.current_function, bar = label)
+        return "{Xxx}.{foo}${bar}".format(Xxx = self.current_filename, foo = self.current_function, bar = label)
     
     def translateReturnName(self, functionName: str):
         # Xxx.foo$ret.i where Xxx = VM file name, foo = function name, i = running tally
         self.call += 1
-        return "{Xxx}.{foo}$ret.{i}".format(Xxx = self.file_strict, foo = functionName, i = self.call)
+        return "{Xxx}.{foo}$ret.{i}".format(Xxx = self.current_filename, foo = functionName, i = self.call)
         
 
 def main():
