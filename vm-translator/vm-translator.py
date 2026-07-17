@@ -517,6 +517,8 @@ class CodeWriter:
         self.file.write("D=M\n")
         self.file.write("@5\n")
         self.file.write("D=D-A\n")
+        self.file.write("A=D\n")
+        self.file.write("D=M\n")
         self.file.write("@retAddr\n")
         self.file.write("M=D\n")
 
@@ -537,11 +539,14 @@ class CodeWriter:
             self.file.write("D=M\n")
             self.file.write(f"@{i[1]}\n")
             self.file.write("D=D-A\n")
+            self.file.write("A=D\n")
+            self.file.write("D=M\n")
             self.file.write(f"@{i[0]}\n")
             self.file.write("M=D\n")
 
         # goto retAddr // return address
         self.file.write("@retAddr // goto retAddr\n")
+        self.file.write("A=M // goto retAddr\n")
         self.file.write("0;JMP\n")
         self.file.write("// end of return\n")   
 
