@@ -527,7 +527,8 @@ class CodeWriter:
         self.file.write("M=D\n")
 
         # goto retAddr // return address
-        
+        self.file.write("@retAddr\n")
+        self.file.write("0;JMP\n")
         
 
 def main():
