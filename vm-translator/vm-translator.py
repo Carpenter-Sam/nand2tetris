@@ -433,7 +433,7 @@ class CodeWriter:
     def writeIf(self, label: str):
         # SP--
         self.file.write("@SP\n")
-        self.file.write("@M=M-1\n")
+        self.file.write("M=M-1\n")
         # Place value in D
         self.file.write("A=M\n")
         self.file.write("D=M\n")
