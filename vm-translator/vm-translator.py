@@ -561,6 +561,19 @@ class CodeWriter:
         
 
 def main():
+    # Either .vm or directory
+    # If .vm append it to files and go
+    # If directory,
+        # Iterate through files in that directory ending with .vm
+        # Search for a Main.vm, and stop if there isn't one
+        # Create a list of all the files starting with Main.vm
+    # Create a CodeWriter with appropriate name (either filename.vm or directoryname)
+    # Loop through files
+        # Each new file create a new parser and change the current filename of the codewriter
+
+
+    files = []
+
     parser = Parser("in/" + sys.argv[1] + ".vm")
     writer = CodeWriter("out/" + sys.argv[1] + ".asm", sys.argv[1])
     
@@ -571,7 +584,8 @@ def main():
             # print(parser.current_command)
             # print(parser.current_command_arg1)
             # print(parser.current_command_arg2, "\n")
-            pass
+            print(f"Incorrect line, unrecognised command: {parser.current_command} {parser.current_command_arg1} {parser.current_command_arg2}")
+            exit()   
         elif parser.current_command_type == CommandType.C_ARITHMETIC:
             writer.writeArithmetic(parser.current_command)
         elif parser.current_command_type == CommandType.C_PUSH or parser.current_command_type == CommandType.C_POP:
@@ -591,6 +605,6 @@ def main():
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("USAGE: py vm-translator filename")
+        print("USAGE: py vm-translator file.vm|directory")
     else:
         main()
