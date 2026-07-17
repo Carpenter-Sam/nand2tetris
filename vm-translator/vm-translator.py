@@ -536,9 +536,8 @@ class CodeWriter:
         # so I may have to nab it off of there instead.
     
     def translateLabel(self, label: str):
-        return label
-        # BUG: The goto, if-goto and label commands are buggy as they do no produce the full label as required.
         # Xxx.foo$bar where Xxx = VM file name, foo = function name, bar = label
+        return "{Xxx}.{foo}${bar}".format(Xxx = self.file_strict, foo = self.current_function, bar = label)
         
 
 def main():
@@ -558,6 +557,7 @@ def main():
         elif parser.current_command_type == CommandType.C_PUSH or parser.current_command_type == CommandType.C_POP:
             writer.writePushPop(parser.current_command, parser.current_command_arg1, parser.current_command_arg2)
         elif parser.current_command_type == CommandType.C_LABEL:
+            print(writer.translateLabel(parser.current_command_arg1))
             writer.writeLabel(writer.translateLabel(parser.current_command_arg1))
         elif parser.current_command_type == CommandType.C_GOTO:
             writer.writeGoto(writer.translateLabel(parser.current_command_arg1))
