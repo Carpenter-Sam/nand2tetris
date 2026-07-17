@@ -416,6 +416,30 @@ class CodeWriter:
         self.file.write("@addr\n")
         self.file.write("A=M\n")
         self.file.write("M=D\n")
+
+    def setFileName(self, fileName: str):
+        pass
+
+    def writeInit(self):
+        pass
+
+    def writeLabel(self, label: str):
+        pass
+
+    def writeGoto(self, label: str):
+        pass
+
+    def writeIf(self, label: str):
+        pass
+
+    def writeFunction(self, functionName: str, numVars: int):
+        pass
+
+    def writeCall(self, functionName: str, numArgs: int):
+        pass
+
+    def writeReturn(self):
+        pass
         
 
 def main():
@@ -434,6 +458,12 @@ def main():
             writer.writeArithmetic(parser.current_command)
         elif parser.current_command_type == CommandType.C_PUSH or parser.current_command_type == CommandType.C_POP:
             writer.writePushPop(parser.current_command, parser.current_command_arg1, parser.current_command_arg2)
+        elif parser.current_command_type == CommandType.C_LABEL:
+            writer.writeLabel(parser.current_command_arg1)
+        elif parser.current_command_type == CommandType.C_GOTO:
+            writer.writeGoto(parser.current_command_arg1)
+        elif parser.current_command_type == CommandType.C_IF:
+            writer.writeIf(parser.current_command_arg1)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
