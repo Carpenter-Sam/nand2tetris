@@ -404,6 +404,7 @@ class CodeWriter:
     def pushValue(self):
         # Pushes value on stack
         self.file.write("@addr // push onto addr\n")
+        self.file.write("A=M\n")
         self.file.write("D=M\n")
         self.file.write("@SP\n")
         self.file.write("A=M\n")
@@ -489,7 +490,7 @@ class CodeWriter:
         # push LCL, ARG, THIS and then THAT
         for i in ["LCL", "ARG", "THIS", "THAT"]:
             self.file.write(f"@{i} // push {i}\n")
-            self.file.write("D=M\n")
+            self.file.write("D=A\n")
             self.file.write("@addr\n")
             self.file.write("M=D\n")
             self.pushValue()
