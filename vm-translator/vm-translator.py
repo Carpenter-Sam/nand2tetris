@@ -49,6 +49,7 @@ class Parser:
             self.current_command_arg2 = self.arg2()
             self.current_command = self.current_command.split()[0]
         except IndexError:
+            # print("Warning: Index error")
             self.current_command = ""
             self.current_command_type = ""
             self.current_command_arg1 = ""
@@ -133,11 +134,11 @@ class CodeWriter:
         # Open file
         try:
             self.file = open(filename, "w")
-            self.current_filename = ""
+            self.current_filename = "Sys"
             self.current_function = ""
 
             self.egl = 0
-            self.call = -1
+            self.call = 0
         except:
             print("Error occured while creating/opening file: " + filename)
             exit()   
@@ -403,7 +404,6 @@ class CodeWriter:
     def pushValue(self):
         # Pushes value on stack
         self.file.write("@addr // push onto addr\n")
-        self.file.write("A=M\n")
         self.file.write("D=M\n")
         self.file.write("@SP\n")
         self.file.write("A=M\n")
@@ -434,25 +434,36 @@ class CodeWriter:
         self.file.write("D=A\n")
         self.file.write("@SP\n")
         self.file.write("M=D\n")
+        for i in [("LCL", 1), ("ARG", 2), ("THIS", 3), ("THAT", 4)]:
+            self.file.write(f"@{i[1]}\n")
+            self.file.write("D=-A\n")
+            self.file.write(f"@{i[0]}\n")
+            self.file.write("M=D\n")
+
         # Call Sys.init
-        self.writeCall("Sys.init", 0)
+        self.writeCall("Sys.init", 0, True)
+        # self.file.write("@Sys.Sys.init\n")
+        # self.file.write("0;JMP\n")
 
     def writeLabel(self, label: str):
-        self.file.write(f"({label})\n")
+        self.file.write(f"({self.translateLabel(label)})\n")
 
-    def writeGoto(self, label: str):
-        self.file.write(f"@{label}\n")
+    def writeGoto(self, label: str, function: bool = False):
+        if function:
+            self.file.write(f"@{self.current_filename}.{label}\n")
+        else:  
+            self.file.write(f"@{self.translateLabel(label)}\n")
         self.file.write("0;JMP\n")
 
     def writeIf(self, label: str):
         # SP--
-        self.file.write(f"@SP // if-goto {label}\n")
+        self.file.write(f"@SP // if-goto {self.translateLabel(label)}\n")
         self.file.write("M=M-1\n")
         # Place value in D
         self.file.write("A=M\n")
         self.file.write("D=M\n")
         # Jump if equal
-        self.file.write(f"@{label}\n")
+        self.file.write(f"@{self.translateLabel(label)}\n")
         self.file.write("D;JGT\n")
 
     def writeFunction(self, functionName: str, numVars: int):
@@ -463,14 +474,15 @@ class CodeWriter:
         for i in range(numVars):
             self.pushConstant(0)
 
-    def writeCall(self, functionName: str, numArgs: int):
+    def writeCall(self, functionName: str, numArgs: int, bootstrap: bool = False):
         # push returnAddress // (using label declared below)
         self.file.write(f"// start of call {functionName} {numArgs}\n")
-        self.file.write(f"@{self.translateReturnName(functionName)} // push returnAddress\n")
+        return_name = self.translateReturnName(functionName)
+        self.file.write(f"@{return_name} // push returnAddress\n")
         self.file.write("D=A\n")
         self.file.write("@SP\n")
         self.file.write("A=M\n")
-        self.file.write("D=M\n")
+        self.file.write("M=D\n")
         self.file.write("@SP\n")
         self.file.write("M=M+1\n")
 
@@ -499,10 +511,10 @@ class CodeWriter:
         self.file.write("M=D\n")
 
         # goto functionName
-        self.writeGoto(functionName)
+        self.writeGoto(functionName, True)
 
         # (returnAddress)
-        self.file.write(f"({self.translateReturnName(functionName)}) // (returnAddress)\n")
+        self.file.write(f"({return_name}) // (returnAddress)\n")
         self.file.write(f"// end of call {functionName} {numArgs}\n")
 
 
@@ -554,64 +566,72 @@ class CodeWriter:
 
     def translateLabel(self, label: str):
         # Xxx.foo$bar where Xxx = VM file name, foo = function name, bar = label
+        print("{Xxx}.{foo}${bar}".format(Xxx = self.current_filename, foo = self.current_function, bar = label))
         return "{Xxx}.{foo}${bar}".format(Xxx = self.current_filename, foo = self.current_function, bar = label)
     
     def translateReturnName(self, functionName: str):
         # Xxx.foo$ret.i where Xxx = VM file name, foo = function name, i = running tally
         self.call += 1
+        print("{Xxx}.{foo}$ret.{i}".format(Xxx = self.current_filename, foo = functionName, i = self.call))
         return "{Xxx}.{foo}$ret.{i}".format(Xxx = self.current_filename, foo = functionName, i = self.call)
         
 
 def main():
     files = []
 
-    split_filename = sys.argv[1].split(".")
-    writer = CodeWriter("out/" + split_filename[0] + ".asm")
-    files.append(split_filename[0])
-    if len(split_filename) == 0:
+    split_file_path = sys.argv[1].split(".") # just in/name from in/filename.vm
+    split_file_name = split_file_path[0].split("/") # just name from in/filename.vm
+    writer = CodeWriter("out/" + split_file_name[-1] + ".asm")
+    if len(split_file_path) == 1:
         # directory
-        files.append("Main")
-        main_file = False
-        for file in listdir(split_filename[0]): # check for a Main.vm in the directory
-            if file.endswith(".vm") and file == "Main.vm":
-                main_file = True
-                # optionally check for a main function in the directory
-            elif file.endswith(".vm"): # append .vm files that aren't Main.vm
-                files.append(file.split(".")[0])
+        files.append(split_file_path[0] + "/Sys")
+        sys_file = False
+        # print(split_file_path, split_file_name)
+        # print(listdir(split_file_path[0]))
+        for file in listdir(split_file_path[0]): # check for a Sys.vm in the directory
+            if file == "Sys.vm":
+                sys_file = True
+                # optionally check for a main function/Main.vm in the directory
+            elif file.endswith(".vm"): # append .vm files that aren't Sys.vm
+                files.append(split_file_path[0] + "/" + file.split(".")[0])
 
-        if not main_file:
-            print(f"ERROR, no Main.vm inside specified directory: {split_filename[0]}")
+        if not sys_file:
+            print(f"ERROR, no Sys.vm inside specified directory: {split_file_path[0]}")
             exit() 
-    elif split_filename[-1] == "vm": 
+        else:
+            writer.writeInit()
+    elif split_file_path[-1] == "vm": 
         # file
-        pass
+        files.append(split_file_path[0])
     else:
         print("USAGE: py vm-translator file.vm|directory")
         exit() 
-    
+    # print(files)
     for file in files:
         # Runs until file ends
         parser = Parser(file + ".vm")
-        writer.setFileName(file)
+        filename = file.split("/")[-1]
+        writer.setFileName(filename)
 
         while not parser.advance() and not parser.iteration_ended:
-            print(parser.current_command, parser.current_command_arg1, parser.current_command_arg2, parser.current_command_type)
+            # print(f"Current: {parser.current_command}, Arg1: {parser.current_command_arg1}, Arg2: {parser.current_command_arg2}, Type: {parser.current_command_type}")
             if parser.current_command == "":
                 # print(parser.current_command)
                 # print(parser.current_command_arg1)
                 # print(parser.current_command_arg2, "\n")
-                print(f"Incorrect line, unrecognised command: {parser.current_command} {parser.current_command_arg1} {parser.current_command_arg2}")
-                exit()   
+                # print(f"Incorrect line, unrecognised command: {parser.current_command} {parser.current_command_arg1} {parser.current_command_arg2}")
+                # exit()   
+                pass
             elif parser.current_command_type == CommandType.C_ARITHMETIC:
                 writer.writeArithmetic(parser.current_command)
             elif parser.current_command_type == CommandType.C_PUSH or parser.current_command_type == CommandType.C_POP:
                 writer.writePushPop(parser.current_command, parser.current_command_arg1, parser.current_command_arg2)
             elif parser.current_command_type == CommandType.C_LABEL:
-                writer.writeLabel(writer.translateLabel(parser.current_command_arg1))
+                writer.writeLabel(parser.current_command_arg1)
             elif parser.current_command_type == CommandType.C_GOTO:
-                writer.writeGoto(writer.translateLabel(parser.current_command_arg1))
+                writer.writeGoto(parser.current_command_arg1)
             elif parser.current_command_type == CommandType.C_IF:
-                writer.writeIf(writer.translateLabel(parser.current_command_arg1))
+                writer.writeIf(parser.current_command_arg1)
             elif parser.current_command_type == CommandType.C_FUNCTION:
                 writer.writeFunction(parser.current_command_arg1, parser.current_command_arg2)
             elif parser.current_command_type == CommandType.C_RETURN:
