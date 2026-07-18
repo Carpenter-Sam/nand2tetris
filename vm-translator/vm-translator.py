@@ -567,13 +567,13 @@ class CodeWriter:
 
     def translateLabel(self, label: str):
         # Xxx.foo$bar where Xxx = VM file name, foo = function name, bar = label
-        print("{Xxx}.{foo}${bar}".format(Xxx = self.current_filename, foo = self.current_function, bar = label))
+        # print("{Xxx}.{foo}${bar}".format(Xxx = self.current_filename, foo = self.current_function, bar = label))
         return "{Xxx}.{foo}${bar}".format(Xxx = self.current_filename, foo = self.current_function, bar = label)
     
     def translateReturnName(self, functionName: str):
         # Xxx.foo$ret.i where Xxx = VM file name, foo = function name, i = running tally
         self.call += 1
-        print("{name}$ret.{i}".format(name = functionName, i = self.call))
+        # print("{name}$ret.{i}".format(name = functionName, i = self.call))
         return "{name}$ret.{i}".format(name = functionName, i = self.call)
         
 
