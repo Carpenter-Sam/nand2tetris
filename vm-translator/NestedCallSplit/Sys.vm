@@ -1,0 +1,15 @@
+// Sys.vm. Tested by the NestedCall test script.
+// Consists of three functions: Sys.init, Sys.main, and Sys.add12.
+
+// Calls Sys.main() and stores a return value in temp 1.
+// Does not return (enters infinite loop).
+// The VM implementation starts running the Sys.init function, by default.
+function Sys.init 0
+	push constant 4000	// tests that THIS and THAT are handled correctly
+	pop pointer 0
+	push constant 5000
+	pop pointer 1
+	call Main.main 0
+	pop temp 1
+	label LOOP
+	goto LOOP

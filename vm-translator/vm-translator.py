@@ -451,7 +451,7 @@ class CodeWriter:
 
     def writeGoto(self, label: str, function: bool = False):
         if function:
-            self.file.write(f"@{self.current_filename}.{label}\n")
+            self.file.write(f"@{label}\n")
         else:  
             self.file.write(f"@{self.translateLabel(label)}\n")
         self.file.write("0;JMP\n")
@@ -469,7 +469,7 @@ class CodeWriter:
 
     def writeFunction(self, functionName: str, numVars: int):
         # (fileName.functionName)
-        self.file.write(f"({self.current_filename}.{functionName}) // function {functionName} {numVars}\n")
+        self.file.write(f"({functionName}) // function {functionName} {numVars}\n")
         self.current_function = functionName
         # repeat nVars times: push 0
         for i in range(numVars):
@@ -573,8 +573,8 @@ class CodeWriter:
     def translateReturnName(self, functionName: str):
         # Xxx.foo$ret.i where Xxx = VM file name, foo = function name, i = running tally
         self.call += 1
-        print("{Xxx}.{foo}$ret.{i}".format(Xxx = self.current_filename, foo = functionName, i = self.call))
-        return "{Xxx}.{foo}$ret.{i}".format(Xxx = self.current_filename, foo = functionName, i = self.call)
+        print("{name}$ret.{i}".format(name = functionName, i = self.call))
+        return "{name}$ret.{i}".format(name = functionName, i = self.call)
         
 
 def main():
