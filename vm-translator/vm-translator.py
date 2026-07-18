@@ -465,7 +465,7 @@ class CodeWriter:
         self.file.write("D=M\n")
         # Jump if equal
         self.file.write(f"@{self.translateLabel(label)}\n")
-        self.file.write("D;JGT\n")
+        self.file.write("D;JLT\n")
 
     def writeFunction(self, functionName: str, numVars: int):
         # (fileName.functionName)
