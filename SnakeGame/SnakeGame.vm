@@ -1,0 +1,138 @@
+function SnakeGame.new 0
+    push constant 7
+    call Memory.alloc 1
+    pop pointer 0
+    call Screen.clearScreen 0
+    pop temp 0
+    push constant 4
+    pop this 0
+    push constant 128
+    pop this 1
+    push this 1
+    call Array.new 1
+    pop this 2
+    push this 1
+    call Array.new 1
+    pop this 3
+    push constant 3
+    push this 2
+    add
+    push constant 7
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push constant 3
+    push this 3
+    add
+    push constant 4
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push constant 2
+    push this 2
+    add
+    push constant 8
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push constant 2
+    push this 3
+    add
+    push constant 4
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push constant 1
+    push this 2
+    add
+    push constant 9
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push constant 1
+    push this 3
+    add
+    push constant 4
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push constant 0
+    push this 2
+    add
+    push constant 10
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push constant 0
+    push this 3
+    add
+    push constant 4
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push constant 1
+    neg
+    pop this 4
+    push constant 97
+    pop this 5
+    push constant 2
+    call Array.new 1
+    pop this 6
+    push constant 0
+    push this 6
+    add
+    push constant 1
+    neg
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push constant 1
+    push this 6
+    add
+    push constant 1
+    neg
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push pointer 0
+    return
+function SnakeGame.dispose 0
+    push argument 0
+    pop pointer 0
+    push this 2
+    call Array.dispose 1
+    pop temp 0
+    push this 3
+    call Array.dispose 1
+    pop temp 0
+    push this 6
+    call Array.dispose 1
+    pop temp 0
+    push pointer 0
+    call Memory.deAlloc 1
+    pop temp 0
+    push constant 0
+    return
+function SnakeGame.newInstance 0
+    call SnakeGame.new 0
+    pop static 0
+    push constant 0
+    return
+function SnakeGame.getInstance 0
+    push static 0
+    return
+function SnakeGame.run 0
+    push argument 0
+    pop pointer 0
+    push constant 0
+    return

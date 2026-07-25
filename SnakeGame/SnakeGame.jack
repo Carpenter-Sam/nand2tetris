@@ -1,0 +1,105 @@
+class SnakeGame {
+	static SnakeGame instance; // Snake game
+	field int snakeLength; // Length of snake
+	field int maxLength; // theoretical maximum length
+	field Array snakeX; // stores the X positions of the snake's body	
+	field Array snakeY; // stores the X positions of the snake's body
+	field boolean playing; // set to true initially
+	field char direction; // direction of the snake
+	field Array apple;
+		
+	// 256 rows of 512 pixels
+	// 32 by 32 squares for the snake
+	
+	/** Constructs a new Snake game. */
+	constructor SnakeGame new() {
+		do Screen.clearScreen();
+		let snakeLength = 4; // initial snake length
+		let maxLength = 128; // theoretical maximum length
+		let snakeX = Array.new(maxLength); // construct new array
+		let snakeY = Array.new(maxLength); // construct new array
+		let snakeX[3] = 7;
+		let snakeY[3] = 4;
+		let snakeX[2] = 8;
+		let snakeY[2] = 4;
+		let snakeX[1] = 9;
+		let snakeY[1] = 4;
+		let snakeX[0] = 10;
+		let snakeY[0] = 4;
+		let playing = true; // set game state
+		let direction = 97;
+		// set apple location
+		let apple = Array.new(2);
+		let apple[0] = -1;
+		let apple[1] = -1;
+		
+		return this;
+	}
+	
+	/** Deallocates the object's memory. */
+	method void dispose() {
+	    do snakeX.dispose();
+	    do snakeY.dispose();
+	    do apple.dispose();
+		do Memory.deAlloc(this);
+		return;
+	}
+	
+	/** Creates an instance of a Snake game. */
+    function void newInstance() {
+        let instance = SnakeGame.new();
+        return;
+    }
+    
+    void function spawnApple() {
+		// check if apple isn't already present?
+		// randomly get location not taken by snake
+		// set apple location
+		return;
+	}
+	
+	void function drawScreen() {
+		// draw snake
+		// draw apple
+		return;
+	}
+    
+    /** Returns this Snake game. */
+    function SnakeGame getInstance() {
+        return instance;
+    }
+    
+    void function userInput() {
+    	// get user input
+		// if valid and not in opposite direction to current input, then change it
+    	return;
+    }
+    
+    /** Starts the game. */
+    method void run() {
+    // spawn_apple()
+    // while(game_state = 0)
+		// user_input()
+		// calculate next move location
+		// if moving_out_of_bounds
+			// set game to dead
+		// elif moving into location of apple
+			// destroy apple
+			// increase snake length by one
+			// append new location to front of snake
+			// spawn_apple()
+		// else
+			// increment through snake checking if moving into self
+			// if at any point yes
+				// set game to dead
+			// if not
+				// append new location to front of snake
+				// remove end of snake
+		// draw_screen
+		// system.delay for 1 second(?)
+	// system.delay for 5-10 seconds
+	// game clean_up
+    
+    return;
+    }
+}
