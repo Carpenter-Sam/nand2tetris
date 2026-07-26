@@ -7,6 +7,7 @@ class SnakeGame {
 	field boolean playing; // set to true initially
 	field char direction; // direction of the snake
 	field Array apple;
+	field Array nextLocation;
 		
 	// 256 rows of 512 pixels
 	// 32 by 32 squares for the snake
@@ -27,11 +28,17 @@ class SnakeGame {
 		let snakeX[0] = 10;
 		let snakeY[0] = 4;
 		let playing = true; // set game state
-		let direction = 97;
+		let direction = 130; // set direction to left-arrow
 		// set apple location
 		let apple = Array.new(2);
 		let apple[0] = -1;
 		let apple[1] = -1;
+		// set next location
+		let nextLocation = Array.new(2);
+		let nextLocation[0] = -1;
+		let nextLocation[1] = -1;
+
+		do Rand.init();
 		
 		return this;
 	}
@@ -51,16 +58,62 @@ class SnakeGame {
         return;
     }
     
-    void function spawnApple() {
-		// check if apple isn't already present?
+    method void spawnApple() {
 		// randomly get location not taken by snake
-		// set apple location
+		var int appleX;
+		var int appleY;
+		var int snakeIter;
+		var boolean valid;
+
+		let valid = false;
+
+		// keep increment until a valid space is found
+		while (~valid) {
+			let apple[0] = Rand.rand(512) / 32;
+			let apple[1] = Rand.rand(256) / 32;
+
+			let snakeIter = 0;
+			let valid = true;
+			while((snakeIter < snakeLength) & valid) {
+				if ((snakeX[snakeIter] = apple[0]) & (snakeY[snakeIter] = apple[1])) {
+					let valid = false;
+				}
+
+				let snakeIter = snakeIter + 1;
+			}
+		}
 		return;
 	}
 	
-	void function drawScreen() {
+	method void drawScreen() {
+		var int snakeIter;
+		var int topLeftX;
+		var int topLeftY;
+		var int bottomRightX;
+		var int bottomRightY;
+
+		do Screen.clearScreen();
+
 		// draw snake
+		while (snakeIter < snakeLength) {
+			// for each array get the X and Y position and then draw a box from 
+			
+			let topLeftX = snakeX[snakeIter] * 32;
+			let topLeftY = snakeY[snakeIter] * 32;
+			let bottomRightX = topLeftX + 31;
+			let bottomRightY = topLeftY + 31;
+			do Screen.drawRectangle(topLeftX, topLeftY, bottomRightX, bottomRightY);
+			
+			let snakeIter = snakeIter + 1;
+		}
+		
+		// check if apple is correctly configured
+		if ((apple[0] = -1) | (apple[1] = -1)) {
+			return;
+		}
+
 		// draw apple
+		do Screen.drawCircle((apple[0] * 32) + 15, (apple[1] * 32) + 15, 15);
 		return;
 	}
     
@@ -69,37 +122,148 @@ class SnakeGame {
         return instance;
     }
     
-    void function userInput() {
+   method void userInput() {
     	// get user input
-		// if valid and not in opposite direction to current input, then change it
+		var int input;
+		let input = Keyboard.keyPressed();
+
+		// if valid and not in opposite direction to current direction, then change it
+		if ((input = 131) & (~(direction = 133))) { // check up-arrow
+			let direction = 131;
+			return;
+		}
+		if ((input = 130) & (~(direction = 132))) { // check left-arrow 
+			let direction = 130;
+			return;
+		}
+		if ((input = 133) & (~(direction = 131))) { // check down-arrow
+			let direction = 133;
+			return;
+		}
+		if ((input = 132) & (~(direction = 130))) { // check right-arrow
+			let direction = 132;
+			return;
+		}
+
     	return;
     }
+
+	method void nextLocationCalculate() {
+		let nextLocation[0] = snakeX[snakeLength - 1];
+		let nextLocation[1] = snakeY[snakeLength - 1];
+
+		if (direction = 131) { // up-arrow
+			let nextLocation[1] = nextLocation[1] - 1;
+			return;
+		}
+		if (direction = 130) { // left-arrow 
+			let nextLocation[0] = nextLocation[0] - 1;
+			return;
+		}
+		if (direction = 133) { // down-arrow
+			let nextLocation[1] = nextLocation[1] + 1;
+			return;
+		}
+		if (direction = 132) { // right-arrow
+			let nextLocation[0] = nextLocation[0] + 1;
+			return;
+		}
+
+		return;
+	}
+
+	method boolean outOfBounds() {
+		if ((nextLocation[0] < 0) | (nextLocation[0] > 16)) {
+			return true;
+		}
+		if ((nextLocation[1] < 0) | (nextLocation[1] > 7)) {
+			return true;
+		}
+		return false;
+	}
+
+	method boolean movingIntoSelf() {
+		var int snakeIter;
+		let snakeIter = 0;
+
+		while (snakeIter < snakeLength) {
+			if ((snakeX[snakeIter] = nextLocation[0]) & (snakeY[snakeIter] = nextLocation[1])) {
+				return true;
+			}
+
+			let snakeIter = snakeIter + 1;
+		}
+		return false;
+	}
+
+	method void moveSnake() {
+		var int snakeIter;
+		let snakeIter = 0;
+
+		while (snakeIter < (snakeLength - 1)) {
+			let snakeX[snakeIter] = snakeX[snakeIter + 1];
+			let snakeY[snakeIter] = snakeY[snakeIter + 1];
+
+			let snakeIter = snakeIter + 1;
+		}
+
+		let snakeX[snakeLength - 1] = nextLocation[0];
+		let snakeY[snakeLength - 1] = nextLocation[1];
+
+		return;
+	}
     
     /** Starts the game. */
     method void run() {
-    // spawn_apple()
-    // while(game_state = 0)
-		// user_input()
-		// calculate next move location
-		// if moving_out_of_bounds
-			// set game to dead
-		// elif moving into location of apple
-			// destroy apple
-			// increase snake length by one
-			// append new location to front of snake
-			// spawn_apple()
-		// else
-			// increment through snake checking if moving into self
-			// if at any point yes
+    	do spawnApple();
+    	while (playing) {
+    		do userInput();
+			do nextLocationCalculate();
+
+			if (outOfBounds() | (snakeLength = maxLength)) { // game-over or win
+				let playing = false;
+				return;
+			}
+			if ((nextLocation[0] = apple[0]) & (nextLocation[1] = apple[1])) { // moving into apple
+				let snakeX[snakeLength] = nextLocation[0];
+				let snakeY[snakeLength] = nextLocation[1];
+				let snakeLength = snakeLength + 1;
+				do spawnApple();
+			} else {
+				if (movingIntoSelf()) {
+					let playing = false;
+					return;
+				} else {
+					do moveSnake();
+				}
+			}
+			
+    		do drawScreen();
+    		do Sys.wait(250);
+    	}
+    	do Sys.wait(1500);
+    	// while(game_state = 0)
+			// user_input()
+			// calculate next move location
+			// if moving_out_of_bounds
 				// set game to dead
-			// if not
+			// elif moving into location of apple
+				// destroy apple
+				// increase snake length by one
 				// append new location to front of snake
-				// remove end of snake
-		// draw_screen
-		// system.delay for 1 second(?)
-	// system.delay for 5-10 seconds
-	// game clean_up
+				// spawn_apple()
+			// else
+				// increment through snake checking if moving into self
+				// if at any point yes
+					// set game to dead
+				// if not
+					// append new location to front of snake
+					// remove end of snake
+			// draw_screen
+			// system.delay for 1 second(?)
+		// system.delay for 5-10 seconds
+		// game clean_up
     
-    return;
+    	return;
     }
 }

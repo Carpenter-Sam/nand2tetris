@@ -1,0 +1,71 @@
+class Rand {
+    static int seed;
+    static int modulus;
+    static int multiplier;
+    static int increment;
+
+    function void init() {
+        let modulus = 4096;
+        let multiplier = 75;
+        let increment = 12345;
+
+        let seed = 1000;
+        let seed = Rand.modulo( (Math.abs((multiplier * seed) + increment)), modulus );
+        return;
+    }
+
+    function int modulo(int a, int mod) {
+        var int calculation;
+        let calculation = Math.abs(a);
+
+        while (calculation > (mod - 1)) {
+            let calculation = calculation - mod;
+        }
+
+        return calculation;
+    }
+
+    method void srand(int x) {
+        let seed = x;
+        return;
+    }
+
+    function int rand(int range) {
+		let seed = Rand.modulo( ((multiplier * seed) + increment), modulus );
+
+        if (range = -1) {
+            return seed;
+        } else {
+            return Rand.modulo(seed, range);
+        }
+        return seed;
+	}
+
+    function int debugRand(int range) {
+        var int calc;
+        
+        do Output.printString(" Pre-calc: ");
+        do Output.printInt(seed);
+
+        let calc = (multiplier * seed);
+        do Output.printString(" Calc 1: ");
+        do Output.printInt(calc);
+        let calc = calc + 10;
+        do Output.printString(" Calc 2: ");
+        do Output.printInt(calc);
+        let calc = Rand.modulo(calc, modulus);
+        do Output.printString(" Calc 3: ");
+        do Output.printInt(calc);
+        let seed = Rand.modulo( ((multiplier * seed) + increment), modulus );
+        do Output.printString(" Internal seed: ");
+        do Output.printInt(calc);
+        do Output.printString(" External seed: ");
+
+        if (range = -1) {
+            return seed;
+        } else {
+            return Rand.modulo(seed, range);
+        }
+        return seed;
+    }
+}
