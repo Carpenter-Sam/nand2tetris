@@ -12,6 +12,7 @@ class SnakeGame {
 	// 256 rows of 512 pixels
 	// 32 by 32 squares for the snake
 	
+	
 	/** Constructs a new Snake game. */
 	constructor SnakeGame new() {
 		do Screen.clearScreen();

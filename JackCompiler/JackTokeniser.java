@@ -44,17 +44,87 @@ public class JackTokeniser {
 	public boolean advance() throws Exception {
 		currentToken = nextToken;
 		boolean validToken = false;
-		int nextChar;
+		int nextChar = 0;
 		String errorMsg = "";
 
-		// Warning check for if current token is greater than one character.
+		// First arning check for if current token is greater than one character.
 		if (currentToken.length() > 1) {
-			System.err.println("WARNING: Within advance() currentToken has started with more than one character: " + currentToken);
+			System.err.println("WARNING: Within advance() pre-comment check, currentToken has started with more than one character: " + currentToken);
+			return false;
+		}
+		
+		// System.out.println("hi: " + currentToken);
+		boolean endOfFile = false;
+		boolean nonCommentSlash = false;
+		boolean notComment = false;
+		// Increment until non-comment is found.
+		while (!notComment) {
+			nonCommentSlash = false;
+			if (currentToken.charAt(0) == '/') { // Potential for a comment.
+				nextChar = file.read();
+				if (nextChar == -1) {
+					endOfFile = true;
+				} else if ((currentToken + (char)nextChar).equals("//")) { // One-line comment, increment until newline.
+					while ((nextChar = file.read()) != 10 && nextChar != -1) {}
+					nextChar = file.read(); // Increment once more to get next character.
+				} else if ((currentToken + (char)nextChar).equals("/*")) { // Multi-line comment, increment until */.
+					nextChar = file.read();
+					String twoLine = "" + (char)nextChar;
+					nextChar = file.read();
+					twoLine += (char)nextChar;
+
+					while (!twoLine.equals("*/") && nextChar != -1) {
+						nextChar = file.read();
+						twoLine = "" + twoLine.charAt(1) + (char)nextChar;
+					}
+					nextChar = file.read(); // Increment once more to get next character.
+				} else {
+					nonCommentSlash = true;
+					notComment = true;
+				}
+
+				if (!nonCommentSlash) {
+					// If next character is a whitespace, then loop until next non-whitespace character.
+					if (Character.isWhitespace(nextChar)) {
+						while (Character.isWhitespace(nextChar = file.read())) {}
+					}
+					// If next character isn't -1 then put it in the current token.
+					if (nextChar != -1) {
+						currentToken = "" + (char)nextChar;
+					} else {
+						endOfFile = true;
+						notComment = true;
+					}
+				} else {
+					if (nextChar == -1) {
+						endOfFile = true;
+					}
+				}
+			} else {
+				notComment = true;
+			}
+		}
+		// If last token is actually a comment then JackCompiler will print undefined characters.
+
+		// Second warning check for if current token is greater than one character.
+		if (currentToken.length() > 1) {
+			System.err.println("WARNING: Within advance() post-comment check, currentToken has started with more than one character: " + currentToken);
 			return false;
 		}
 
-		// If the token is a symbol we increment once to get the next value and exit
-		if (isSymbol(currentToken.charAt(0), true)) {
+		// Skips processing of character if at end of file.
+		if (endOfFile) {
+			currentToken = "";
+			currentTokenType = TokenType.NONE;
+
+		// Special instance where there was a '/' that wasn't part of a comment.
+		} else if (nonCommentSlash) {
+			validToken = true;
+			currentTokenType = TokenType.symbol;
+			// nextChar = file.read();
+			
+		// If the token is a symbol we increment once to get the next value, then check if it's a comment.
+		} else if (isSymbol(currentToken.charAt(0), true)) {
 			validToken = true;
 			currentTokenType = TokenType.symbol;
 			nextChar = file.read();
@@ -119,7 +189,7 @@ public class JackTokeniser {
 			}
 			
 		}
-		
+
 		// If next character is a whitespace, then loop until next non-whitespace character.
 		if (Character.isWhitespace(nextChar)) {
 			while (Character.isWhitespace(nextChar = file.read())) {}
@@ -129,7 +199,10 @@ public class JackTokeniser {
 			nextToken = "" + (char)nextChar;
 		}
 
-		if (!validToken) { // Check if the token is valid or not, if not raise an exception.
+		if (endOfFile) { // Special check for end of file reatled to comments.
+			file.close();
+			return false;
+		} else if (!validToken) { // Check if the token is valid or not, if not raise an exception.
 			file.close();
 			if (errorMsg.isBlank()){
 				throw new Exception("Invalid token: " + currentToken);
@@ -147,10 +220,10 @@ public class JackTokeniser {
 	private boolean isSymbol(char token, boolean editEscapeCharacters) {
 		// '{' | '}' | '(' | ')' | '['  | ']' |
 		// '.' | ',' | '+' | '-' | '\*' | '/' |
-		// '&' | '|' | '<' | '>' | '='  | '~'
+		// '&' | '|' | '<' | '>' | '='  | '~' | ';'
 		if (token == '{' || token == '}' || token == '(' || token == ')' || token == '[' || token == ']' || 
 			token == '.' || token == ',' || token == '+' || token == '-' || token == '*' || token == '/' || 
-			token == '&' || token == '|' || token == '<' || token == '>' || token == '=' || token == '~' ) {
+			token == '&' || token == '|' || token == '<' || token == '>' || token == '=' || token == '~' || token == ';') {
 				if (editEscapeCharacters) {
 					// Some symbols must be replaced with escape characters.
 					if (token == '<') {
