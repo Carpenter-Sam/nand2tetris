@@ -5,3 +5,5 @@ vm-translator/out/*
 vm-translator/.vscode/*
 
 .vscode/*
+
+test-files/*
