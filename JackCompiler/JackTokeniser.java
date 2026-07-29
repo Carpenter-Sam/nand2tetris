@@ -54,7 +54,7 @@ public class JackTokeniser {
 		}
 
 		// If the token is a symbol we increment once to get the next value and exit
-		if (isSymbol(currentToken)) {
+		if (isSymbol(currentToken.charAt(0), true)) {
 			validToken = true;
 			currentTokenType = TokenType.symbol;
 			nextChar = file.read();
@@ -94,8 +94,25 @@ public class JackTokeniser {
 			catch (NumberFormatException e) {
 				throw new Exception("Invalid integer constant token: " + currentToken);
 			}
+
+		// Reaching this else indicates token is either a keyword, identifier or an invalid token.
 		} else {
 			nextChar = file.read();
+
+			// Loop until end of token (a symbol, double-quote, or whitespace).
+			while(!isSymbol((char)nextChar, false) && nextChar != '\"' && !Character.isWhitespace(nextChar)) {
+				currentToken += nextChar;
+				nextChar = file.read();
+			}
+
+			// Check if token is a keyword.
+			if (isKeyword(currentToken)) {
+				validToken = true;
+				currentTokenType = TokenType.keyword;
+			}
+
+			// If not a keyword, check if token is eligible as an identifier.
+			
 		}
 
 		// loops until token is acquired
@@ -107,7 +124,7 @@ public class JackTokeniser {
 		// 			number = integer constant then loop until no more digits
 		// 			symbol = symbol then end of token
 		// 			double quote = string constant loop until double quote
-		// else loop until end of token (indicated by start of intConstant, symbol, stringConstant or whitespace)
+		// else loop until end of token (indicated by symbol, double-quote or whitespace)
 		//	check if token is a keyword
 		//	if not keyword then check if identifier with only letters, digits and underscore (not starting with a digit)
 	
@@ -115,22 +132,23 @@ public class JackTokeniser {
 		// if file ends without valid token raise error
 		// if end of file then close and return False else return True
 
-		// If next character is a whitespace, then loop until next non-whitespace character
+		// If next character is a whitespace, then loop until next non-whitespace character.
 		if (Character.isWhitespace(nextChar)) {
 			while (Character.isWhitespace(nextChar = file.read())) {}
 		}
+		// If next character isn't -1 then add it to next token.
 		if (nextChar != -1) {
 			nextToken = "" + (char)nextChar;
 		}
 
-		if (!validToken) { // Check if the token if valid or not.
+		if (!validToken) { // Check if the token is valid or not, if not raise an exception.
 			file.close();
 			if (errorMsg.isBlank()){
 				throw new Exception("Invalid token: " + currentToken);
 			} else {
 				throw new Exception(errorMsg);
 			}
-		} else if (nextChar == -1) { // Check if end of file reached.
+		} else if (nextChar == -1) { // Check if end of file reached, if it is then close file.
 			file.close();
 			return false;
 		} else { // Return true to indicate there are more tokens to parse.
@@ -138,29 +156,46 @@ public class JackTokeniser {
 		}
 	}
 
-	private boolean isSymbol(String token) {
-		if (token.length() > 1) {
-			System.err.println("WARNING: isSymbol given String with more that one character: " + token);
-			return false;
-		}
-		// '{'|'}'|'('|')'|'['|']'|'.'|','|'+'|''-'|'\*'|'/'|'&'|'|'|'<'|'>'|'='|'~'
-		if (token.equals("{") || token.equals("}") || token.equals("(") || token.equals(")") || token.equals("[") || token.equals("]") || 
-			token.equals(".") || token.equals(",") || token.equals("+") || token.equals("-") || token.equals("*") || token.equals("/") || 
-			token.equals("&") || token.equals("|") || token.equals("<") || token.equals(">") || token.equals("=") || token.equals("~")) {
-
-				// Some symbols must be replaced with escape characters.
-				if (token.equals("<")) {
-					currentToken = "&lt;";
-				} else if (token.equals(">")) {
-					currentToken = "&gt;";
-				} else if (token.equals("\"")) {
-					currentToken = "&quot;";
-				} else if (token.equals("&")) {
-					currentToken = "&amp;";
+	private boolean isSymbol(char token, boolean editEscapeCharacters) {
+		// '{' | '}' | '(' | ')' | '['  | ']' |
+		// '.' | ',' | '+' | '-' | '\*' | '/' |
+		// '&' | '|' | '<' | '>' | '='  | '~'
+		if (token == '{' || token == '}' || token == '(' || token == ')' || token == '[' || token == ']' || 
+			token == '.' || token == ',' || token == '+' || token == '-' || token == '*' || token == '/' || 
+			token == '&' || token == '|' || token == '<' || token == '>' || token == '=' || token == '~' ) {
+				if (editEscapeCharacters) {
+					// Some symbols must be replaced with escape characters.
+					if (token == '<') {
+						currentToken = "&lt;";
+					} else if (token == '>') {
+						currentToken = "&gt;";
+					} else if (token == '\"') {
+						currentToken = "&quot;";
+					} else if (token == '&') {
+						currentToken = "&amp;";
+					}
 				}
 				return true;
-			}
-		return false;
+		} else {
+			return false;
+		}
+	}
+
+	private boolean isKeyword(String token) {
+		// 'class'  | 'constructor' | 'function' | 'method' | 'field'   |
+		// 'static' | 'var'         | 'int'      | 'char'   | 'boolean' |
+		// 'void'   | 'true'        | 'false'    | 'null'   | 'this'    |
+		// 'let'    | 'do'          | 'if'       | 'else'   | 'while'   |
+		// 'return'
+		if (token.equals("class")  || token.equals("constructor") || token.equals("function") || token.equals("method") || token.equals("field")   ||
+			token.equals("static") || token.equals("var")         || token.equals("int")      || token.equals("char")   || token.equals("boolean") ||
+			token.equals("void")   || token.equals("true")        || token.equals("false")    || token.equals("null")   || token.equals("this")    ||
+			token.equals("let")    || token.equals("do")          || token.equals("if")       || token.equals("else")   || token.equals("while")   ||
+			token.equals("return")) {
+			return true;
+		} else {
+			return false;
+		}		
 	}
 
 	public String getCurrentToken() {
