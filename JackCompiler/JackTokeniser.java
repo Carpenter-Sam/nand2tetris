@@ -18,32 +18,19 @@ public class JackTokeniser {
 		// System.err.println(Arrays.toString(file_split));
 
 		if (!file_split[file_split.length - 1].equals("jack") || file_split.length < 2) {
-			throw new Exception("File not ending in Jack.");
+			throw new IOException("File not ending in Jack.");
 		}
 
-		try {
-			file = new FileReader(filename);
+		file = new FileReader(filename);
 
-			// Loop until first non-whitespace character is found
-			int nextChar;
-			while (Character.isWhitespace(nextChar = file.read())) {}
-			// Check that there is actually a non-whitespace character in the file
-			if (nextChar == -1) {
-					throw new IOException("Empty file.");
-			} else {
-				nextToken += (char)nextChar;
-			}
-
-
-		}
-		catch (IOException e) {
-			System.err.println(e);
-			file.close();
-		}
-		catch (Exception e) {
-			System.err.println(e);
-			file.close();
-			// throw new FileNotFoundException("File not found.");
+		// Loop until first non-whitespace character is found
+		int nextChar;
+		while (Character.isWhitespace(nextChar = file.read())) {}
+		// Check that there is actually a non-whitespace character in the file
+		if (nextChar == -1) {
+				throw new IOException("Empty file.");
+		} else {
+			nextToken += (char)nextChar;
 		}
     }
 	
@@ -126,6 +113,10 @@ public class JackTokeniser {
 				return true;
 			}
 		return false;
+	}
+
+	public String getCurrentToken() {
+		return currentToken;
 	}
 	
 	// Returns the type of the current token, as a constant.
