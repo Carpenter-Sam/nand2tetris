@@ -31,7 +31,22 @@ public class JackTokeniser {
 	// This method should only be called if there are more tokens.
 	// Initially there is no current token.
 	public boolean advance() {
-		
+		// loops until token is acquired
+
+		// ignore whitespace until first non-whitespace character found
+		// then whitespace indicates end of token
+
+		// if first character
+		// 			number = integer constant then loop until no more digits
+		// 			symbol = symbol then end of token
+		// 			double quote = string constant loop until double quote
+		// else loop until end of token (indicated by start of intConstant, symbol, stringConstant or whitespace)
+		//	check if token is a keyword
+		//	if not keyword then check if identifier with only letters, digits and underscore (not starting with a digit)
+	
+		// if not a valid token then raise error
+		// if file ends without valid token raise error
+		// if end of file then close and return False else return True
 	}
 	
 	// Returns the type of the current token, as a constant.
