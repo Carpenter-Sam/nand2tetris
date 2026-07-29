@@ -156,7 +156,7 @@ public class JackTokeniser {
 			try {
 				if (0 <= Integer.parseInt(currentToken) && Integer.parseInt(currentToken) <= 32767) {
 					validToken = true;
-					currentTokenType = TokenType.intConstant;
+					currentTokenType = TokenType.integerConstant;
 				} else {
 					errorMsg = currentToken + " is out of bounds. Ensure integer constants are 0..=32767.";
 				}
@@ -178,12 +178,11 @@ public class JackTokeniser {
 			if (isKeyword(currentToken)) {
 				validToken = true;
 				currentTokenType = TokenType.keyword;
-			}
-
+		
 			// If not a keyword, check if token is eligible as an identifier.
 			// Eligible if only contains A-Z, a-z, 0-9 and _ characters but doesn't start with a digit.
 			// WARNING: If identifier start with a number gets tokenised into integerConstant + identifier.
-			if (currentToken.matches("^[A-Za-z_][A-Za-z0-9_]*$")) {
+			} else if (currentToken.matches("^[A-Za-z_][A-Za-z0-9_]*$")) {
 				validToken = true;
 				currentTokenType = TokenType.identifier;
 			}
