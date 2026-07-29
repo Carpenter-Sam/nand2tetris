@@ -45,6 +45,7 @@ public class JackTokeniser {
 		currentToken = nextToken;
 		boolean validToken = false;
 		int nextChar;
+		String errorMsg = "";
 
 		// If the token is a symbol we increment once to get the next value and exit
 		if (isSymbol(currentToken)) {
@@ -62,16 +63,31 @@ public class JackTokeniser {
 				if (nextChar == 34) {
 					validToken = true;
 					currentTokenType = TokenType.stringConstant;
-					nextChar = file.read();
 				} else if (nextChar != 10 && nextChar != -1) {
 					currentToken += (char)nextChar;
-					nextChar = file.read();
 				}
+				nextChar = file.read();
 			}
 
 		// If number then increment until first non-number.
-		// } else if (currentToken.equals(currentToken) {
-
+		} else if (48 <= currentToken.charAt(0) && currentToken.charAt(0) <= 57) { // Checks if character is a digit 0-9.
+			nextChar = file.read();
+			// Loop until digit is no longer 0-9.
+			while(48 <= nextChar && nextChar <= 57) {
+				currentToken += (char)nextChar;
+				nextChar = file.read();
+			}
+			try {
+				if (0 <= Integer.parseInt(currentToken) && Integer.parseInt(currentToken) <= 32767) {
+					validToken = true;
+					currentTokenType = TokenType.intConstant;
+				} else {
+					errorMsg = currentToken + " is out of bounds. Ensure integer constants are 0..=32767.";
+				}
+			}
+			catch (NumberFormatException e) {
+				throw new Exception("Invalid integer constant token: " + currentToken);
+			}
 		} else {
 			nextChar = file.read();
 		}
@@ -103,7 +119,11 @@ public class JackTokeniser {
 
 		if (!validToken) { // Check if the token if valid or not.
 			file.close();
-			throw new Exception("Invalid token.");
+			if (errorMsg.isBlank()){
+				throw new Exception("Invalid token: " + currentToken);
+			} else {
+				throw new Exception(errorMsg);
+			}
 		} else if (nextChar == -1) { // Check if end of file reached.
 			file.close();
 			return false;
