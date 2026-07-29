@@ -5,7 +5,7 @@ import java.util.Arrays;
 public class JackTokeniser {
 	private FileReader file;
 	private String currentToken;
-	private String nextToken;
+	public String nextToken;
 	private TokenType currentTokenType;
 
 	// Opens the input .jack file and gets ready to tokenise it.
@@ -13,6 +13,7 @@ public class JackTokeniser {
     public JackTokeniser(String filename) throws Exception {
 		currentToken = "";
 		nextToken = "";
+		currentTokenType = TokenType.NONE;
 
 		String[] file_split = filename.split("\\.");
 		// System.err.println(Arrays.toString(file_split));
@@ -48,7 +49,29 @@ public class JackTokeniser {
 		// If the token is a symbol we increment once to get the next value and exit
 		if (isSymbol(currentToken)) {
 			validToken = true;
+			currentTokenType = TokenType.symbol;
 			nextChar = file.read();
+
+		// If string then increment until " reached, if newline reached then invalid.
+		// WARNING: Escape characters such as \" not implemented.
+		} else if (currentToken.equals("\"")) {
+			currentToken = ""; // to remove the leading "
+			nextChar = file.read();
+			// Loop until " or until the end of the file/a newline character.
+			while (nextChar != 10 && nextChar != -1 && !validToken) {
+				if (nextChar == 34) {
+					validToken = true;
+					currentTokenType = TokenType.stringConstant;
+					nextChar = file.read();
+				} else if (nextChar != 10 && nextChar != -1) {
+					currentToken += (char)nextChar;
+					nextChar = file.read();
+				}
+			}
+
+		// If number then increment until first non-number.
+		// } else if (currentToken.equals(currentToken) {
+
 		} else {
 			nextChar = file.read();
 		}
@@ -98,7 +121,6 @@ public class JackTokeniser {
 		if (token.equals("{") || token.equals("}") || token.equals("(") || token.equals(")") || token.equals("[") || token.equals("]") || 
 			token.equals(".") || token.equals(",") || token.equals("+") || token.equals("-") || token.equals("*") || token.equals("/") || 
 			token.equals("&") || token.equals("|") || token.equals("<") || token.equals(">") || token.equals("=") || token.equals("~")) {
-				currentTokenType = TokenType.SYMBOL;
 
 				// Some symbols must be replaced with escape characters.
 				if (token.equals("<")) {
@@ -117,6 +139,10 @@ public class JackTokeniser {
 
 	public String getCurrentToken() {
 		return currentToken;
+	}
+
+	public String getCurrentTokenType() {
+		return currentTokenType.name();
 	}
 	
 	// Returns the type of the current token, as a constant.

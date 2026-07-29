@@ -6,9 +6,15 @@ public class JackCompiler {
 
             // WARNING: Advance still needs to be processed/outputted one more time.
             while (jack.advance()){
-                System.out.println(jack.getCurrentToken());
+                // print "<" + tokenClassification + ">"
+                // print the current token value
+                // print "</" + tokenClassification + ">"
+                // print newLine
+                System.out.println(String.format("<%s> %s <%s>", 
+                    jack.getCurrentTokenType(), jack.getCurrentToken(), jack.getCurrentTokenType()));
             }
-            System.out.println(jack.getCurrentToken());
+            System.out.println(String.format("<%s> %s <%s>", 
+                    jack.getCurrentTokenType(), jack.getCurrentToken(), jack.getCurrentTokenType()));
         }
         catch (Exception e) {
             System.out.println(e);
