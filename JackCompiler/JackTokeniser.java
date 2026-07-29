@@ -47,6 +47,12 @@ public class JackTokeniser {
 		int nextChar;
 		String errorMsg = "";
 
+		// Warning check for if current token is greater than one character.
+		if (currentToken.length() > 1) {
+			System.err.println("WARNING: Within advance() currentToken has started with more than one character: " + currentToken);
+			return false;
+		}
+
 		// If the token is a symbol we increment once to get the next value and exit
 		if (isSymbol(currentToken)) {
 			validToken = true;
