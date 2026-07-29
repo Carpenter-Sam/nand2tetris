@@ -98,10 +98,9 @@ public class JackTokeniser {
 		// Reaching this else indicates token is either a keyword, identifier or an invalid token.
 		} else {
 			nextChar = file.read();
-
-			// Loop until end of token (a symbol, double-quote, or whitespace).
-			while(!isSymbol((char)nextChar, false) && nextChar != '\"' && !Character.isWhitespace(nextChar)) {
-				currentToken += nextChar;
+			// Loop until end of token (a symbol, double-quote, whitespace or end of file).
+			while(!isSymbol((char)nextChar, false) && nextChar != '\"' && !Character.isWhitespace(nextChar) && nextChar != -1) {
+				currentToken += (char)nextChar;
 				nextChar = file.read();
 			}
 
@@ -112,26 +111,15 @@ public class JackTokeniser {
 			}
 
 			// If not a keyword, check if token is eligible as an identifier.
+			// Eligible if only contains A-Z, a-z, 0-9 and _ characters but doesn't start with a digit.
+			// WARNING: If identifier start with a number gets tokenised into integerConstant + identifier.
+			if (currentToken.matches("^[A-Za-z_][A-Za-z0-9_]*$")) {
+				validToken = true;
+				currentTokenType = TokenType.identifier;
+			}
 			
 		}
-
-		// loops until token is acquired
-
-		// ignore whitespace until first non-whitespace character found
-		// then whitespace indicates end of token
-
-		// if first character
-		// 			number = integer constant then loop until no more digits
-		// 			symbol = symbol then end of token
-		// 			double quote = string constant loop until double quote
-		// else loop until end of token (indicated by symbol, double-quote or whitespace)
-		//	check if token is a keyword
-		//	if not keyword then check if identifier with only letters, digits and underscore (not starting with a digit)
-	
-		// if not a valid token then raise error
-		// if file ends without valid token raise error
-		// if end of file then close and return False else return True
-
+		
 		// If next character is a whitespace, then loop until next non-whitespace character.
 		if (Character.isWhitespace(nextChar)) {
 			while (Character.isWhitespace(nextChar = file.read())) {}
