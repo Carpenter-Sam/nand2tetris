@@ -1,6 +1,7 @@
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.util.Arrays;
 import java.io.BufferedWriter;
 import java.io.BufferedReader;
 
@@ -32,13 +33,15 @@ class CompilationEngine {
 			throw new Exception("ERROR: CompilationEngine file input expected to start with '<tokens>'.");
 		}
 
-		compileClass();
+		splitLineTest();
 
-		// Check if file ends correctly.
-		lineNumber++;
-		if (!reader.readLine().equals("<tokens>")) {
-			throw new Exception("ERROR: CompilationEngine  file input expected to start with '<tokens>'.");
-		}
+		// compileClass();
+
+		// // Check if file ends correctly.
+		// lineNumber++;
+		// if (!reader.readLine().equals("<tokens>")) {
+		// 	throw new Exception("ERROR: CompilationEngine  file input expected to start with '<tokens>'.");
+		// }
 	}
 	
 	// Compiles a complete class.
@@ -149,6 +152,7 @@ class CompilationEngine {
 		return "";
 	}
 
+	// WARNING: Inproper input validation! Assumes no errors currently.
 	public String[] splitLine(String line) throws Exception {
 		int endOfElement1 = -1;
 		int startOfToken = -1;
@@ -178,8 +182,11 @@ class CompilationEngine {
 			throw new Exception("ERROR: Compilation Engine expected longer line in format '<e> t </e>'.");
 		// If not end of line, it means that the current lineIter is pointing at the closing >.
 		} else {
-			endOfElement1 = lineEnd++ - 1;
+			endOfElement1 = lineIter++;
 		}
+
+		// System.out.println("Reached: " + lineIter);
+		// System.out.println(endOfElement1);
 
 		// Check for space after first set of angle brackets
 		if (line.charAt(lineIter++) != ' ') {
@@ -195,7 +202,7 @@ class CompilationEngine {
 			throw new Exception("ERROR: Compilation Engine expected longer line in format '<e> t </e>'.");
 		// If not end of line, it means that the current lineIter is pointing at the closing space.
 		} else {
-			endOfToken = lineEnd++ - 1;
+			endOfToken = lineIter++;
 		}
 
 		// Check for opening angle bracket and then slash after token.
@@ -214,7 +221,7 @@ class CompilationEngine {
 			throw new Exception("ERROR: Compilation Engine expected longer line in format '<e> t </e>'.");
 		// If not end of line, it means that the current lineIter is pointing at the closing >.
 		} else {
-			endOfElement2 = lineEnd++ - 1;
+			endOfElement2 = lineIter++;
 		}
 
 		// Add check to ensure nothing after final angle bracket.
@@ -227,7 +234,7 @@ class CompilationEngine {
 		String []splitStrings = new String[3];
 
 		// Element 1
-		splitStrings[0] = line.substring(0, endOfElement1);
+		splitStrings[0] = line.substring(1, endOfElement1);
 
 		// Token
 		splitStrings[1] = line.substring(startOfToken, endOfToken);
@@ -238,4 +245,9 @@ class CompilationEngine {
 		return splitStrings;
 
 	}
+
+	// private void splitLineTest() throws Exception {
+	// 	System.out.println("Testing.");
+	// 	System.out.println(Arrays.toString(splitLine("<h i d </h i>")));
+	// }
 }
