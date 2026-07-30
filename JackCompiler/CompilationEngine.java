@@ -312,53 +312,86 @@ class CompilationEngine {
 	
 	// Compiles a sequence of statements.
 	// Does not handle the enclosing '{}'.
-	private void compileStatements() {
+	private void compileStatements() throws Exception {
 		// code for compiling statements
 		// Uses a loop to handle 0 or more statment instances, according to the left-most token.
 		// If left-most token is 'if' then 'compileIfStatement' is called.
 		
 		// statement*
+		// statement: letStatement | ifStatement | whileStatement | doStatement | returnStatement
+		if (expect(new String[]{"let", "if", "while", "do", "return"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.keyword}, false)) {
+			writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
+			
+			switch(previousToken){
+				case "let":
+					compileLet();;
+					break;
 
+				case "if":
+					compileIfStatement();
+					break;
+
+				case "while":
+					compileWhileStatement();
+					break;
+
+				case "do":
+					compileDo();
+					break;
+
+				case "return":
+					compileReturn();
+					break;
+
+				case "_":
+					throw new Exception("ERROR: Unusual compileStatements ending in the default statements switch case.");
+			}
+			 
+		} else {
+			usePreviousLine = true;
+		}
 	}
 	
 	// Compiles a let statement.
-	// compileLet()
+	private void compileLet() throws Exception {
+		// varName ('I' expression']')? '=' expression';'
+	}
 	
 	// Compiles an if statment, possibly with a trailing else clause.
-	// compileIfStatement() {
-	// 	// code for compiling an if statement
-	// }
+	private void compileIfStatement() throws Exception {
+		// code for compiling an if statement
+		// '('expression ')' '{' statements '}' ('else' '{' statements '}') ?
+	}
 	
 	// Compiles a while statement.
-	// compileWhileStatement() {
-	// 	// code for compiling a while statement
-	// 	eat('while');  code to handle 'while';
-	// 	eat('('); code to handle '(';
-	// 	compileExpression();
-	// 	eat(')'); code to handle ')';
-	// 	...
-	// }
+	private void compileWhileStatement() throws Exception {
+		// '('expression')' '{'statements '}'
+	}
 	
 	// Compiles a do statement.
-	// compileDo()
+	private void compileDo() throws Exception {
+		// subroutineCall ';'
+	}
 	
 	// Compiles a return statement.
-	// compileReturn()
+	private void compileReturn() throws Exception {
+		// expression? ';'
+	}
 	
 	// Compiles an expression.
-	// compileExpression()
+	// compileExpression() throws Exception 
 	
 	// Compiles a term.
 	// If the current token is an identifier, the routine must distinguish between a variable, an array entry, or a subroutine call.
 	// As single look-ahead token, which may be one of '[', '(', or '.', suffices to distinguish between possibilities.
 	// Any other token is not part of this term and should not be advanced over.
-	// compileTerm() {
+	// compileTerm() throws Exception {
 			// code for compiling a term
 			// When the current token is a varName(some identifier), it can either be a variable name, an array entry of a rubroutine call.
 	// }
 	
 	// Compiles a (possible empty) comma-separated list of expressions.
-	// compileExpressionList()
+	// compileExpressionList() throws Exception 
 
 	// If not told to use the previous line, then expect reads a new line of the .Txml and stores it in case of later use.
 	// Expect checks for errors then checks to see if the token is valid, returning an error message if it isn't.
