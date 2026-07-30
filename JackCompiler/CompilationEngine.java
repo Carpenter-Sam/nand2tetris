@@ -383,7 +383,7 @@ class CompilationEngine {
 			writeLine("<symbol> [ </symbol>");
 
 			// expression
-			compileExpression(false);
+			compileExpression(true);
 
 			// ']'
 			if (expect(new String[]{"]"}, new TokenType[]{TokenType.symbol}, true)) {
@@ -399,7 +399,7 @@ class CompilationEngine {
 		}
 
 		// expression
-		compileExpression(false);
+		compileExpression(true);
 
 		// ';'
 		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
@@ -419,7 +419,7 @@ class CompilationEngine {
 		}
 
 		// expression 
-		compileExpression(false);
+		compileExpression(true);
 
 		// ')' 
 		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
@@ -481,7 +481,7 @@ class CompilationEngine {
 		}
 
 		// expression
-		compileExpression(false);
+		compileExpression(true);
 
 		// ')' 
 		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
@@ -514,6 +514,14 @@ class CompilationEngine {
 		// subroutineCall 
 		// TODO 
 
+
+
+
+		// subroutineCall: subroutineName '(' expressionList ')' | ( className | varName)' '.' subroutineName '('expressionList ')'
+
+
+
+		
 		// ';'
 		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
 			writeLine("<symbol> ; </symbol>");
@@ -539,11 +547,11 @@ class CompilationEngine {
 	
 	// Compiles an expression.
 	private boolean compileExpression(boolean allowedToFail) throws Exception {
-		writeLine("<expression>");
-		spaceCount++;
-
 		// term
-		compileTerm();
+		if (!compileTerm(true, false) && allowedToFail) {
+			throw new Exception("ERROR: Compilation engine expected expression on line %d." + lineNumber);
+		} 
+		
 		// (op term)*
 		while (true) {
 			// 'op'
@@ -555,7 +563,7 @@ class CompilationEngine {
 			}
 
 			// term
-			compileTerm();
+			compileTerm(false, true);
 		} 
 
 
@@ -568,35 +576,127 @@ class CompilationEngine {
 	// If the current token is an identifier, the routine must distinguish between a variable, an array entry, or a subroutine call.
 	// As single look-ahead token, which may be one of '[', '(', or '.', suffices to distinguish between possibilities.
 	// Any other token is not part of this term and should not be advanced over.
-	// private boolean compileTerm() throws Exception {
+	private boolean compileTerm(boolean frontOfExpression, boolean allowedToFail) throws Exception {
 		// code for compiling a term
-		// When the current token is a varName(some identifier), it can either be a variable name, an array entry of a rubroutine call.
+		// When the current token is a varName(some identifier), it can either be a variable name, an array entry of a subroutine call.
 	
+		// if it's tokenType is symbol and that symbol is ')'|';' then it was an optional expression that needs to be returned from.
+		if (expect(new String[]{")", ";"}, new TokenType[]{TokenType.symbol, TokenType.symbol}, false)) {
+			usePreviousLine = true;
+			return false;
+		}
+		usePreviousLine = true;
+
+		if (frontOfExpression) {
+			writeLine("<expression>");
+			spaceCount++;
+		}
+
+		writeLine("<expression>");
+		spaceCount++;
+
+		boolean validTerm = false;
 		// integerConstant 
 		// tokenType is integerConstant
+		if (previousTokenType.equals(TokenType.integerConstant.name())) {
+			writeLine(String.format("<integerConstant> &s </integerConstant>", previousToken));
+			validTerm = true;
+		}
+		usePreviousLine = true;
 
 		// stringConstant
 		// tokenType is stringConstant
+		if (!validTerm && previousTokenType.equals(TokenType.stringConstant.name())) {
+			writeLine(String.format("<stringConstant> &s </stringConstant>", previousToken));
+			validTerm = true;
+		}
+		usePreviousLine = true;
 
 		// keywordConstant 
 		// tokenType is keyword of token 'true'|'false'|'null'|'this'
+		if (!validTerm && expect(new String[]{"true", "false", "null", "this"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.keyword}, false)) {
+			writeLine(String.format("<keyword> &s </keyword>", previousToken)); // WARNING: Maybe supposed to be keywordConstant?
+			validTerm = true;
+		}
+		usePreviousLine = true;
 
 		// '('expression')' 
 		// tokenType is symbol of token '('
+		if (!validTerm && expect(new String[]{"("}, new TokenType[]{TokenType.keyword}, false)) {
+			writeLine(String.format("<symbol> ( </symbol>")); 
+			validTerm = true;
+
+			// expression
+			compileExpression(true);
+
+			// ')' 
+			if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {
+				writeLine("<symbol> ) </symbol>");
+			}
+
+		}
+		usePreviousLine = true;
 
 		// (unaryOp term) 
 		// tokenType is symbol of token '-'|'~'
+		if (!validTerm && expect(new String[]{"-", "~"}, new TokenType[]{TokenType.symbol, TokenType.symbol}, false)) {
+			writeLine(String.format("<symbol> %s </symbol>", previousToken));
+			validTerm = true;
 
-		// varName'['expression']' 
-		// tokenType of identifier followed by a symbol of token '['
+			// term
+			compileTerm(false, true);
+		}
+		usePreviousLine = true;
 
-		// subroutine Call
-		// tokenType of identifier followed by symbol of token '('
+		if (!validTerm && expect(new String[]{"identifier"}, new TokenType[]{TokenType.identifier}, false)) {
+			String varToken = previousToken;
 
-		// varName 
-		// tokenType of identifier followed not by a symbol of token '['
+			// varName'['expression']' 
+			// tokenType of identifier followed by a symbol of token '['
+			if (expect(new String[]{"["}, new TokenType[]{TokenType.symbol}, false)) { 
+				// varName
+				writeLine(String.format("<identifier> %s </identifier>", varToken));
 
-	// }
+				//'['
+				if (expect(new String[]{"["}, new TokenType[]{TokenType.symbol}, true)) {
+					writeLine("<symbol> [ </symbol>");
+				}
+
+				// expression
+				compileExpression(true);
+
+				// ']' 
+				if (expect(new String[]{"]"}, new TokenType[]{TokenType.symbol}, true)) {
+					writeLine("<symbol> ] </symbol>");
+				}
+
+			
+			// subroutine Call
+			// tokenType of identifier followed by symbol of token '('
+			} else if ((usePreviousLine = true) && expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, false)) {
+				
+
+
+
+				// subroutineCall: subroutineName '(' expressionList ')' | ( className | varName)' '.' subroutineName '('expressionList ')'
+
+
+
+
+			// varName 
+			// tokenType of identifier followed not by a symbol of token '['
+			} else {
+				writeLine(String.format("<identifier> %s </identifier>", varToken));
+			}
+		}
+		usePreviousLine = true;
+
+		if (validTerm) {
+			spaceCount--;
+			writeLine("</expression>");
+		}
+		return validTerm;
+	}
 	
 	// Compiles a (possible empty) comma-separated list of expressions.
 	// compileExpressionList() throws Exception {
