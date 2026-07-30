@@ -27,7 +27,7 @@ class CompilationEngine {
 	
 	// Compiles a complete class.
 	void compileClass() {
-
+		
 	}
 	
 	// Compiles a static variable declaration, of a field declaration.
