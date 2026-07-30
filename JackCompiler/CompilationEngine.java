@@ -86,10 +86,10 @@ class CompilationEngine {
 		}
 
 		// classVarDec* 
-		compileClassVarDec(false);
+		while (compileClassVarDec(false)) {};
 
 		// subroutineDec* 
-		compileSubroutineDec(false);
+		while (compileSubroutineDec(false)) {};
 
 		// '}'
 		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
@@ -102,11 +102,11 @@ class CompilationEngine {
 	
 	// Compiles a static variable declaration, of a field declaration.
 	// classVarDec: ('static'|'field') type varName (',' varName)* ';'
-	private void compileClassVarDec(boolean allowedToFail) throws Exception {
+	private boolean compileClassVarDec(boolean allowedToFail) throws Exception {
 		// ('static'|'field')
-		if (!expect(new String[]{"static", "field"}, new TokenType[]{TokenType.identifier}, allowedToFail)) {
+		if (!expect(new String[]{"static", "field"}, new TokenType[]{TokenType.keyword, TokenType.keyword}, allowedToFail)) {
 			usePreviousLine = true;
-			return;
+			return false;
 		} else {
 			writeLine("<classVarDec>");
 			spaceCount++;
@@ -128,6 +128,7 @@ class CompilationEngine {
 
 		// (',' varName)* 
 		while (true) {
+			// ','
 			if (expect(new String[]{","}, new TokenType[]{TokenType.symbol}, false)) {
 				writeLine("<keyword> , </keyword>");
 			} else {
@@ -135,6 +136,7 @@ class CompilationEngine {
 				break;
 			}
 
+			// varName
 			if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
 				writeLine(String.format("<identifier> %s </identifier>", previousToken));
 			}
@@ -147,36 +149,177 @@ class CompilationEngine {
 
 		spaceCount--;
 		writeLine("</classVarDec>");
+		return true;
 	}
 	
 	// Compiles a complete method, function, or a constructor.
-	private void compileSubroutineDec(boolean allowedToFail) throws Exception {
-		// ('constructor'|'function'|'method') 
+	private boolean compileSubroutineDec(boolean allowedToFail) throws Exception {
+		// ('constructor'|'function'|'method')
+		if (!expect(new String[]{"constructor", "function", "method"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword}, allowedToFail)) {
+			usePreviousLine = true;
+			return false;
+		} else {
+			writeLine("<classVarDec>");
+			spaceCount++;
+			writeLine(String.format("<keyword> %s </keyword>", previousToken));
+		}
+		
 		// ('void'|type) 
+		if (expect(new String[]{"void", "int", "char", "boolean", "className"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.identifier}, true)) {
+			writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
+		}
+		
+
 		// subroutineName 
+		if (expect(new String[]{"subroutineName"}, new TokenType[]{TokenType.identifier}, true)) {
+			writeLine(String.format("<identifier> %s </identifier>", previousToken));
+		} 
+
 		// '(' 
+		if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<keyword> ( </keyword>");
+		}
+
 		// parameterList 
+		compileParameterList();
+
 		// ')' 
-		// subroutineBody
+		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<keyword> ) </keyword>");
+		}
+
+		compileSubroutineBody();
+
+		return true;
 	}
 	
 	// Compiles a (possible empty) parameter list.
 	// Does not handle the enclosing '()'.
-	// compileParameterList() throws Exception 
+	private void compileParameterList() throws Exception {
+		writeLine("<parameterList>");
+		spaceCount++;
+
+		// ( (type varName) (',' type varName)*)?
+		// type
+		if (expect(new String[]{"int", "char", "boolean", "className"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.identifier}, false)) {
+			writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
+		
+			// varName
+			if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
+				writeLine(String.format("<identifier> %s </identifier>", previousToken));
+			} 
+
+			// (',' type varName)*	
+			while (true) {
+				// ','
+				if (expect(new String[]{","}, new TokenType[]{TokenType.symbol}, false)) {
+					writeLine("<keyword> , </keyword>");
+				} else {
+					usePreviousLine = true;
+					break;
+				}
+
+				// type
+				if (expect(new String[]{"int", "char", "boolean", "className"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.identifier}, true)) {
+					writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
+				}
+
+				// varName
+				if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
+					writeLine(String.format("<identifier> %s </identifier>", previousToken));
+				}
+			} 
+		} else {
+			usePreviousLine = true;
+		}
+
+		spaceCount--;
+		writeLine("</parameterList>");
+	}
 	
 	// Compiles a subroutine's body.
-	// compileSubroutineBody() throws Exception 
+	private void compileSubroutineBody() throws Exception {
+		writeLine("<subroutineBody>");
+		spaceCount++;
+
+		// '{' 
+		if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<keyword> { </keyword>");
+		}
+
+		// varDec* 
+		while(compileVarDec()) {}
+
+		// statements
+		compileStatements();
+		
+		// '}'
+		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<keyword> } </keyword>");
+		}
+
+		spaceCount--;
+		writeLine("</subroutineBody>");
+	}
 	
 	// Compiles a var declaration.
-	// compileVarDec() throws Exception 
+	private boolean compileVarDec() throws Exception {
+		// 'var' 
+		if (!expect(new String[]{"var"}, new TokenType[]{TokenType.keyword}, false)) {
+			usePreviousLine = true;
+			return false;
+		} else {
+			writeLine("<classVarDec>");
+			spaceCount++;
+			writeLine(String.format("<keyword> %s </keyword>", previousToken));
+		}
+
+		// type 
+		if (expect(new String[]{"int", "char", "boolean", "className"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.identifier}, true)) {
+			writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
+		}
+
+		// varName 
+		if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
+			writeLine(String.format("<identifier> %s </identifier>", previousToken));
+		}
+
+		// (',' varName)* 
+		while (true) {
+			// ','
+			if (expect(new String[]{","}, new TokenType[]{TokenType.symbol}, false)) {
+				writeLine("<keyword> , </keyword>");
+			} else {
+				usePreviousLine = true;
+				break;
+			}
+
+			// varName
+			if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
+				writeLine(String.format("<identifier> %s </identifier>", previousToken));
+			}
+		} 
+
+		// ';'
+		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<keyword> ; </keyword>");
+		}
+
+		spaceCount--;
+		writeLine("</varDec>");
+		return true;
+	}
 	
 	// Compiles a sequence of statements.
 	// Does not handle the enclosing '{}'.
-	// compileStatements() {
-	// 	// code for compiling statements
-	// 	// Uses a loop to handle 0 or more statment instances, according to the left-most token.
-	// 	// If left-most token is 'if' then 'compileIfStatement' is called.
-	// }
+	private void compileStatements() {
+		// code for compiling statements
+		// Uses a loop to handle 0 or more statment instances, according to the left-most token.
+		// If left-most token is 'if' then 'compileIfStatement' is called.
+		
+		// statement*
+
+	}
 	
 	// Compiles a let statement.
 	// compileLet()
