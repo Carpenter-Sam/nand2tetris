@@ -1,11 +1,10 @@
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Arrays;
 
 public class JackTokeniser {
 	private FileReader file;
 	private String currentToken;
-	public String nextToken;
+	private String nextToken;
 	private TokenType currentTokenType;
 
 	// Opens the input .jack file and gets ready to tokenise it.
