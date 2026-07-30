@@ -13,12 +13,14 @@ class CompilationEngine {
 
 	private boolean usePreviousLine = false;
 	private String previousToken;
+	private String previousTokenType;
 	private String previousLine;
+	private String errorMsg = "";
 	
-	private String[] keywords = {"class", "constructor", "function", "method",
-			 					 "field", "static", "var", "int", "char", "boolean",
-			 					 "void", "true", "false", "null", "this", "let", "do",
-								 "if", "else", "while", "return"};
+	// private String[] keywords = {"class", "constructor", "function", "method",
+	// 		 					 "field", "static", "var", "int", "char", "boolean",
+	// 		 					 "void", "true", "false", "null", "this", "let", "do",
+	// 							 "if", "else", "while", "return"};
 	
 
 	// Creates a new compilation engine with the given input and output.
@@ -69,27 +71,28 @@ class CompilationEngine {
 		spaceCount++;
 
 		// 'class'
-		if (expect(new String[]{"class"}, TokenType.keyword, false, true)) {
+		if (expect(new String[]{"class"}, new TokenType[]{TokenType.keyword}, true)) {
 			writeLine("<keyword> class </keyword>");
 		}
 		
 		// className 
-		if (expect(new String[]{"className"}, TokenType.identifier, false, true)) {
+		if (expect(new String[]{"className"}, new TokenType[]{TokenType.identifier}, true)) {
 			writeLine(String.format("<identifier> %s </identifier>", previousToken));
 		} 
 
 		// '{' 
-		if (expect(new String[]{"{"}, TokenType.symbol, false, true)) {
+		if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {
 			writeLine("<keyword> { </keyword>");
 		}
 
 		// classVarDec* 
-		while(compileClassVarDec(false));
+		compileClassVarDec(false);
 
 		// subroutineDec* 
+		compileSubroutineDec(false);
 
 		// '}'
-		if (expect(new String[]{"}"}, TokenType.symbol, false, true)) {
+		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
 			writeLine("<keyword> { </keyword>");
 		}
 
@@ -99,11 +102,11 @@ class CompilationEngine {
 	
 	// Compiles a static variable declaration, of a field declaration.
 	// classVarDec: ('static'|'field') type varName (',' varName)* ';'
-	private boolean compileClassVarDec(boolean allowedToFail) throws Exception {
+	private void compileClassVarDec(boolean allowedToFail) throws Exception {
 		// ('static'|'field')
-		if (!expect(new String[]{"static", "field"}, TokenType.identifier, false, allowedToFail)) {
+		if (!expect(new String[]{"static", "field"}, new TokenType[]{TokenType.identifier}, allowedToFail)) {
 			usePreviousLine = true;
-			return false;
+			return;
 		} else {
 			writeLine("<classVarDec>");
 			spaceCount++;
@@ -111,20 +114,51 @@ class CompilationEngine {
 		}
 
 		// type 
-		expect(new String[]{"int", "char", "boolean"}, TokenType.identifier, true, true);
+		String[] expectedTokens1 = {"int", "char", "boolean", "className"};
+		TokenType[] expectedTokenTypes1 = {TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.identifier};
+		if (expect(expectedTokens1, expectedTokenTypes1, true)) {
+			writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
+		}
 		
 
 		// varName 
+		if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
+			writeLine(String.format("<identifier> %s </identifier>", previousToken));
+		} 
+
 		// (',' varName)* 
+		while (true) {
+			if (expect(new String[]{","}, new TokenType[]{TokenType.symbol}, false)) {
+				writeLine("<keyword> , </keyword>");
+			} else {
+				usePreviousLine = true;
+				break;
+			}
+
+			if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
+				writeLine(String.format("<identifier> %s </identifier>", previousToken));
+			}
+		} 
+
 		// ';'
+		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<keyword> ; </keyword>");
+		}
 
 		spaceCount--;
 		writeLine("</classVarDec>");
-		return true;
 	}
 	
 	// Compiles a complete method, function, or a constructor.
-	// compileSubroutineDec() throws Exception 
+	private void compileSubroutineDec(boolean allowedToFail) throws Exception {
+		// ('constructor'|'function'|'method') 
+		// ('void'|type) 
+		// subroutineName 
+		// '(' 
+		// parameterList 
+		// ')' 
+		// subroutineBody
+	}
 	
 	// Compiles a (possible empty) parameter list.
 	// Does not handle the enclosing '()'.
@@ -183,105 +217,12 @@ class CompilationEngine {
 	// Compiles a (possible empty) comma-separated list of expressions.
 	// compileExpressionList()
 
-	// Reads the next line of the .Txml and checks expected token is there with expected token type.
-	// private String expect(String []expectedTokens, TokenType expectedTokenType, char expectType) throws Exception {
-	// 	String line;
-	// 	potentiallyMore = false;
-
-	// 	// Only read next line if there isn't a previous line that needs to be read.
-	// 	if (stringStored) {
-	// 		line = previousLine;
-	// 		stringStored = false;
-	// 	} else {
-	// 		lineNumber++;
-	// 		try {
-	// 			line = reader.readLine(); 
-	// 		} catch (Exception e) {
-	// 			System.err.println("ERROR: " + e);
-	// 			throw new Exception("ERROR: Compilation Engine unable to read next line of file.");
-	// 		}
-
-	// 		if (line.isEmpty()) {
-	// 			throw new Exception(String.format("ERROR: Compilation Engine got back empty line when expecting '%s' at line %d.",
-	// 								Arrays.toString(expectedTokens), lineNumber));
-	// 		} else if (line.equals("-1")) {
-	// 			throw new Exception(String.format("ERROR: Compilation Engine file input ended early when expecting '%s' at line %d.",
-	// 								Arrays.toString(expectedTokens), lineNumber));
-	// 		}
-	// 	}
-		
-	// 	String[] splitStrings;
-	// 	try {
-	// 		splitStrings = splitLine(line);
-	// 	} catch (Exception e) {
-	// 		System.err.println(e);
-	// 		throw new Exception(String.format("ERROR: Compilation Engine error occured when splitting line expecting '%s' at line %d.",
-	// 							Arrays.toString(expectedTokens), lineNumber));
-	// 	}
-
-	// 	System.out.println(Arrays.toString(splitStrings));
-		
-		
-	// 	// Check that the two elements are of the same type
-	// 	if (!splitStrings[0].equals(splitStrings[2])) {
-	// 		throw new Exception(String.format("ERROR: Compilation Engine expected elements of equal types on line %d but instead got types '%s' and '%s'.",
-	// 										  lineNumber, splitStrings[0], splitStrings[2]));
-	// 	}
-
-	// 	// If one of these types, then a failed check doesn't mean a fail.
-	// 	boolean returnPotentially = false;
-	// 	boolean doNotFail = false;
-	// 	if (expectType == '*' || expectType == '+') {
-	// 		returnPotentially = true;
-	// 		if (expectType == '?') {
-	// 			doNotFail = true;
-	// 		}
-	// 	}
-		
-	// 	// Check if the two elements are equal to the expected type
-	// 	if (!splitStrings[0].equals(expectedTokenType.name())) {
-	// 		if (doNotFail) {
-	// 			previousLine = line;
-	// 			stringStored = true;
-	// 			return "";
-	// 		} else {
-	// 			throw new Exception(String.format("ERROR: Compilation Engine expected element of type '%s' on line %d but instead got type '%s'.",
-	// 										  expectedTokenType.name(), lineNumber, splitStrings[0]));
-	// 		}
-		
-	// 	// If tokenType is an identifier then unknown identifier token, so no need to check if it equals expectedToken.
-	// 	} else if (expectedTokenType == TokenType.identifier) {
-	// 		if (returnPotentially) {
-	// 			potentiallyMore = true;
-	// 		}
-	// 		return splitStrings[1];
-	// 	}
-
-	// 	// Check if the token is same as any expectedTokens
-	// 	for (String token : expectedTokens) {
-	// 		if (token.equals(splitStrings[1])) {
-	// 			if (returnPotentially) {
-	// 				potentiallyMore = true;
-	// 			}
-	// 			return splitStrings[1];
-	// 		}
-	// 	}
-		
-	// 	if (doNotFail) {
-	// 			previousLine = line;
-	// 			stringStored = true;
-	// 			return "";
-	// 	} else {
-	// 	throw new Exception(String.format("ERROR: Compilation Engine expected token '%s' on line %d but instead got '%s'.",
-	// 										Arrays.toString(expectedTokens), lineNumber, splitStrings[1]));
-	// 	}
-	// }
-
 	// If not told to use the previous line, then expect reads a new line of the .Txml and stores it in case of later use.
 	// Expect checks for errors then checks to see if the token is valid, returning an error message if it isn't.
 	// If it is valid then it returns a boolean and a potential identifier.
-	private boolean expect(String []expectedTokens, TokenType expectedTokenType, boolean bypassKeywordCheck, boolean fails) throws Exception {
+	private boolean expect(String []expectedTokens, TokenType []expectedTokenType, boolean fails) throws Exception {
 		String line;
+		errorMsg = "";
 
 		// Only read next line if there isn't a previous line that needs to be read.
 		if (usePreviousLine) {
@@ -316,57 +257,49 @@ class CompilationEngine {
 
 		System.out.println(Arrays.toString(splitStrings));
 		
-		String errorMsg = new String();
-		boolean validToken = true;
 		// Check that the two elements are of the same type
 		if (!splitStrings[0].equals(splitStrings[2])) {
-			validToken = false;
-			errorMsg = String.format("ERROR: Compilation Engine expected elements of equal types on line %d but instead got types '%s' and '%s'.",
-											  lineNumber, splitStrings[0], splitStrings[2]);
+			throw new Exception(String.format("ERROR: Compilation Engine expected elements of equal types on line %d but instead got types '%s' and '%s'.",
+											  lineNumber, splitStrings[0], splitStrings[2]));
 		}
 		
-		// Check if the two elements are equal to the expected type
-		if (bypassKeywordCheck) {
-			splitStrings[0] = "identifier";
-			splitStrings[2] = "identifier";
-		}
-		if (!splitStrings[0].equals(expectedTokenType.name())) {
-			validToken = false;
-			errorMsg = String.format("ERROR: Compilation Engine expected element of type '%s' on line %d but instead got type '%s'.",
-											  expectedTokenType.name(), lineNumber, splitStrings[0]);
-		}
+		// Check if any of the valid tokens match the string
+		boolean validToken = false;
+		int iter = 0;
+		while (iter < expectedTokens.length) {
+			validToken = check(expectedTokens[iter], expectedTokenType[iter], splitStrings);
+			if (validToken) {break;}
+			iter++;
+		} 
 		
-		// If identifier, then checks need to be made to see if it's a valid identifier or not.
-		if (expectedTokenType == TokenType.identifier) {
-			// We check if it's equal to a keyword and if it is then we check to see if it's a valid keyword or not.
-			for (String keyword : keywords) {
-				if (splitStrings[1].equals(keyword)) {
-					validToken = isKeywordAllowed(keyword, expectedTokens);
-					break;
-				}
-			}
-		} else {
-			validToken = false;
-			// Check if the token is same as any expectedTokens
-			for (String token : expectedTokens) {
-				if (token.equals(splitStrings[1])) {
-					validToken = true;
-				}
-			}
-		}
 		
 		if (!validToken) {
-			errorMsg = String.format("ERROR: Compilation Engine expected token '%s' on line %d but instead got '%s'.",
+			errorMsg = String.format("ERROR: Compilation Engine expected a token of '%s' on line %d but instead got '%s'.",
 												Arrays.toString(expectedTokens), lineNumber, splitStrings[1]);
 		}
 		
 
 		previousLine = line;
+		previousTokenType = splitStrings[0];
 		previousToken = splitStrings[1];
 		if (fails && !validToken) {
 			throw new Exception(errorMsg);
 		} else {
 			return validToken;
+		}
+	}
+
+	private boolean check(String potentialToken, TokenType tokenType, String[] splitStrings) {
+		// If types aren't equal then return false.
+		if (!splitStrings[0].equals(tokenType.name())) {
+			return false;
+		// If tokens aren't equal and the type is not an identifier then return false.
+		} else if (!splitStrings[1].equals(potentialToken) && tokenType != TokenType.identifier) {
+			return false;
+		} else {
+			// Returns true if the types are equal and the tokens are equal.
+			// Also returns true if the types are identifiers without checking token equality, since we won't know the identifier token in advance.
+			return true;
 		}
 	}
 
@@ -463,19 +396,4 @@ class CompilationEngine {
 		return splitStrings;
 
 	}
-
-	
-	private boolean isKeywordAllowed(String keywordToCheck, String[] allowedKeywords) {
-		for (String keyword : allowedKeywords) {
-			if (keyword.equals(keywordToCheck)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	// private void splitLineTest() throws Exception {
-	// 	System.out.println("Testing.");
-	// 	System.out.println(Arrays.toString(splitLine("<h i d </h i>")));
-	// }
 }
