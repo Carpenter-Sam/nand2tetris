@@ -82,7 +82,7 @@ class CompilationEngine {
 
 		// '{' 
 		if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<keyword> { </keyword>");
+			writeLine("<symbol> { </symbol>");
 		}
 
 		// classVarDec* 
@@ -93,7 +93,7 @@ class CompilationEngine {
 
 		// '}'
 		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<keyword> { </keyword>");
+			writeLine("<symbol> { </symbol>");
 		}
 
 		spaceCount--;
@@ -130,7 +130,7 @@ class CompilationEngine {
 		while (true) {
 			// ','
 			if (expect(new String[]{","}, new TokenType[]{TokenType.symbol}, false)) {
-				writeLine("<keyword> , </keyword>");
+				writeLine("<symbol> , </symbol>");
 			} else {
 				usePreviousLine = true;
 				break;
@@ -144,7 +144,7 @@ class CompilationEngine {
 
 		// ';'
 		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<keyword> ; </keyword>");
+			writeLine("<symbol> ; </symbol>");
 		}
 
 		spaceCount--;
@@ -154,12 +154,13 @@ class CompilationEngine {
 	
 	// Compiles a complete method, function, or a constructor.
 	private boolean compileSubroutineDec(boolean allowedToFail) throws Exception {
+
 		// ('constructor'|'function'|'method')
 		if (!expect(new String[]{"constructor", "function", "method"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword}, allowedToFail)) {
 			usePreviousLine = true;
 			return false;
 		} else {
-			writeLine("<classVarDec>");
+			writeLine("<subroutineDec>");
 			spaceCount++;
 			writeLine(String.format("<keyword> %s </keyword>", previousToken));
 		}
@@ -177,7 +178,7 @@ class CompilationEngine {
 
 		// '(' 
 		if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<keyword> ( </keyword>");
+			writeLine("<symbol> ( </symbol>");
 		}
 
 		// parameterList 
@@ -185,10 +186,13 @@ class CompilationEngine {
 
 		// ')' 
 		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<keyword> ) </keyword>");
+			writeLine("<symbol> ) </symbol>");
 		}
 
 		compileSubroutineBody();
+
+		spaceCount--;
+		writeLine("</subroutineDec>");
 
 		return true;
 	}
@@ -213,7 +217,7 @@ class CompilationEngine {
 			while (true) {
 				// ','
 				if (expect(new String[]{","}, new TokenType[]{TokenType.symbol}, false)) {
-					writeLine("<keyword> , </keyword>");
+					writeLine("<symbol> , </symbol>");
 				} else {
 					usePreviousLine = true;
 					break;
@@ -244,18 +248,22 @@ class CompilationEngine {
 
 		// '{' 
 		if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<keyword> { </keyword>");
+			writeLine("<symbol> { </symbol>");
 		}
 
 		// varDec* 
 		while(compileVarDec()) {}
 
+		writeLine("<statements>");
+		spaceCount++;
 		// statements
 		compileStatements();
+		spaceCount--;
+		writeLine("</statements>");
 		
 		// '}'
 		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<keyword> } </keyword>");
+			writeLine("<symbol> } </symbol>");
 		}
 
 		spaceCount--;
@@ -269,7 +277,7 @@ class CompilationEngine {
 			usePreviousLine = true;
 			return false;
 		} else {
-			writeLine("<classVarDec>");
+			writeLine("<varDec>");
 			spaceCount++;
 			writeLine(String.format("<keyword> %s </keyword>", previousToken));
 		}
@@ -288,7 +296,7 @@ class CompilationEngine {
 		while (true) {
 			// ','
 			if (expect(new String[]{","}, new TokenType[]{TokenType.symbol}, false)) {
-				writeLine("<keyword> , </keyword>");
+				writeLine("<symbol> , </symbol>");
 			} else {
 				usePreviousLine = true;
 				break;
@@ -302,7 +310,7 @@ class CompilationEngine {
 
 		// ';'
 		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<keyword> ; </keyword>");
+			writeLine("<symbol> ; </symbol>");
 		}
 
 		spaceCount--;
@@ -324,22 +332,32 @@ class CompilationEngine {
 			
 			switch(previousToken){
 				case "let":
+					writeLine("<letStatement>");
+					spaceCount++;
 					compileLet();;
 					break;
 
 				case "if":
+					writeLine("<ifStatement>");
+					spaceCount++;
 					compileIfStatement();
 					break;
 
 				case "while":
+					writeLine("<whileStatement>");
+					spaceCount++;
 					compileWhileStatement();
 					break;
 
 				case "do":
+					writeLine("<doStatement>");
+					spaceCount++;
 					compileDo();
 					break;
 
 				case "return":
+					writeLine("<returnStatement>");
+					spaceCount++;
 					compileReturn();
 					break;
 
@@ -354,32 +372,66 @@ class CompilationEngine {
 	
 	// Compiles a let statement.
 	private void compileLet() throws Exception {
-		// varName ('I' expression']')? '=' expression';'
+		// varName 
+		if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
+			writeLine(String.format("<identifier> %s </identifier>", previousToken));
+		}
+
+		// ('I' expression']')? 
+		// '=' 
+		if (expect(new String[]{"="}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<symbol> = </symbol>");
+		}
+
+		// expression
+		compileExpression();
+
+		// ';'
+		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<symbol> ; </symbol>");
+		}
+
+		spaceCount--;
+		writeLine("<letStatement>");
 	}
 	
 	// Compiles an if statment, possibly with a trailing else clause.
 	private void compileIfStatement() throws Exception {
 		// code for compiling an if statement
 		// '('expression ')' '{' statements '}' ('else' '{' statements '}') ?
+
+		spaceCount--;
+		writeLine("<ifStatement>");
 	}
 	
 	// Compiles a while statement.
 	private void compileWhileStatement() throws Exception {
 		// '('expression')' '{'statements '}'
+
+		spaceCount--;
+		writeLine("<whileStatement>");
 	}
 	
 	// Compiles a do statement.
 	private void compileDo() throws Exception {
 		// subroutineCall ';'
+
+		spaceCount--;
+		writeLine("<doStatement>");
 	}
 	
 	// Compiles a return statement.
 	private void compileReturn() throws Exception {
 		// expression? ';'
+
+		spaceCount--;
+		writeLine("<returnStatement>");
 	}
 	
 	// Compiles an expression.
-	// compileExpression() throws Exception 
+	private boolean compileExpression() throws Exception {
+		return true;
+	}
 	
 	// Compiles a term.
 	// If the current token is an identifier, the routine must distinguish between a variable, an array entry, or a subroutine call.
