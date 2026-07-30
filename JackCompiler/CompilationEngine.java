@@ -254,9 +254,9 @@ class CompilationEngine {
 		// varDec* 
 		while(compileVarDec()) {}
 
+		// statements
 		writeLine("<statements>");
 		spaceCount++;
-		// statements
 		compileStatements();
 		spaceCount--;
 		writeLine("</statements>");
@@ -383,7 +383,7 @@ class CompilationEngine {
 			writeLine("<symbol> [ </symbol>");
 
 			// expression
-			compileExpression();
+			compileExpression(false);
 
 			// ']'
 			if (expect(new String[]{"]"}, new TokenType[]{TokenType.symbol}, true)) {
@@ -399,7 +399,7 @@ class CompilationEngine {
 		}
 
 		// expression
-		compileExpression();
+		compileExpression(false);
 
 		// ';'
 		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
@@ -414,12 +414,60 @@ class CompilationEngine {
 	private void compileIfStatement() throws Exception {
 		// code for compiling an if statement
 		// '('
+		if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<symbol> ( </symbol>");
+		}
+
 		// expression 
+		compileExpression(false);
+
 		// ')' 
+		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<symbol> ) </symbol>");
+		}
+
 		// '{'
-		//  statements 
+		if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<symbol> { </symbol>");
+		}
+
+		// statements
+		writeLine("<statements>");
+		spaceCount++;
+		compileStatements();
+		spaceCount--;
+		writeLine("</statements>");
+
 		// '}' 
+		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<symbol> } </symbol>");
+		}
+
 		// ('else' '{' statements '}')?
+		// 'else'
+		if (expect(new String[]{"else"}, new TokenType[]{TokenType.keyword}, false)) {
+			writeLine("<keyword> else </keyword>");
+
+			// '{' 
+			if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {
+				writeLine("<symbol> { </symbol>");
+			}
+
+			// statements
+			writeLine("<statements>");
+			spaceCount++;
+			compileStatements();
+			spaceCount--;
+			writeLine("</statements>");
+
+			// '}'
+			if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
+				writeLine("<symbol> } </symbol>");
+			}
+
+		} else {
+			usePreviousLine = true;
+		}
 
 		spaceCount--;
 		writeLine("<ifStatement>");
@@ -427,7 +475,35 @@ class CompilationEngine {
 	
 	// Compiles a while statement.
 	private void compileWhileStatement() throws Exception {
-		// '('expression')' '{'statements '}'
+		// '('
+		if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<symbol> ( </symbol>");
+		}
+
+		// expression
+		compileExpression(false);
+
+		// ')' 
+		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<symbol> ) </symbol>");
+		}
+
+		// '{'
+		if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<symbol> { </symbol>");
+		}
+
+		// statements
+		writeLine("<statements>");
+		spaceCount++;
+		compileStatements();
+		spaceCount--;
+		writeLine("</statements>");
+
+		// '}'
+		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<symbol> } </symbol>");
+		}
 
 		spaceCount--;
 		writeLine("<whileStatement>");
@@ -435,7 +511,13 @@ class CompilationEngine {
 	
 	// Compiles a do statement.
 	private void compileDo() throws Exception {
-		// subroutineCall ';'
+		// subroutineCall 
+		// TODO 
+
+		// ';'
+		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<symbol> ; </symbol>");
+		}
 
 		spaceCount--;
 		writeLine("<doStatement>");
@@ -443,14 +525,20 @@ class CompilationEngine {
 	
 	// Compiles a return statement.
 	private void compileReturn() throws Exception {
-		// expression? ';'
+		// expression?
+		compileExpression(false);
+
+		// ';'
+		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<symbol> ; </symbol>");
+		}
 
 		spaceCount--;
 		writeLine("<returnStatement>");
 	}
 	
 	// Compiles an expression.
-	private boolean compileExpression() throws Exception {
+	private boolean compileExpression(boolean allowedToFail) throws Exception {
 		return true;
 	}
 	
