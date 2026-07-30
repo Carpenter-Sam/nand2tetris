@@ -506,7 +506,7 @@ class CompilationEngine {
 		}
 
 		spaceCount--;
-		writeLine("<whileStatement>");
+		writeLine("</whileStatement>");
 	}
 	
 	// Compiles a do statement.
@@ -520,7 +520,7 @@ class CompilationEngine {
 		}
 
 		spaceCount--;
-		writeLine("<doStatement>");
+		writeLine("</doStatement>");
 	}
 	
 	// Compiles a return statement.
@@ -534,7 +534,7 @@ class CompilationEngine {
 		}
 
 		spaceCount--;
-		writeLine("<returnStatement>");
+		writeLine("</returnStatement>");
 	}
 	
 	// Compiles an expression.
@@ -542,7 +542,7 @@ class CompilationEngine {
 		writeLine("<expression>");
 		spaceCount++;
 
-		
+		// term (op term)*
 
 		spaceCount--;
 		writeLine("</expression>");
@@ -553,13 +553,46 @@ class CompilationEngine {
 	// If the current token is an identifier, the routine must distinguish between a variable, an array entry, or a subroutine call.
 	// As single look-ahead token, which may be one of '[', '(', or '.', suffices to distinguish between possibilities.
 	// Any other token is not part of this term and should not be advanced over.
-	// compileTerm() throws Exception {
-			// code for compiling a term
-			// When the current token is a varName(some identifier), it can either be a variable name, an array entry of a rubroutine call.
+	// private boolean compileTerm() throws Exception {
+		// code for compiling a term
+		// When the current token is a varName(some identifier), it can either be a variable name, an array entry of a rubroutine call.
+	
+		// integerConstant 
+		// tokenType is integerConstant
+
+		// stringConstant
+		// tokenType is stringConstant
+
+		// keywordConstant 
+		// tokenType is keyword of token 'true'|'false'|'null'|'this'
+
+		// '('expression')' 
+		// tokenType is symbol of token '('
+
+		// (unaryOp term) 
+		// tokenType is symbol of token '-'|'~'
+
+		// varName'['expression']' 
+		// tokenType of identifier followed by a symbol of token '['
+
+		// subroutine Call
+		// tokenType of identifier followed by symbol of token '('
+
+		// varName 
+		// tokenType of identifier followed not by a symbol of token '['
+
 	// }
 	
 	// Compiles a (possible empty) comma-separated list of expressions.
-	// compileExpressionList() throws Exception 
+	// compileExpressionList() throws Exception {
+	// 	writeLine("<expressionList>");
+	// 	spaceCount++;
+	// 
+	// 	(expression ('›' expression) *)?
+	//
+	// 	spaceCount--;
+	// 	writeLine("</expressionList>");
+	// }
 
 	// If not told to use the previous line, then expect reads a new line of the .Txml and stores it in case of later use.
 	// Expect checks for errors then checks to see if the token is valid, returning an error message if it isn't.
