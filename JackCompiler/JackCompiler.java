@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.FileWriter;
 
 public class JackCompiler {
@@ -45,34 +46,52 @@ public class JackCompiler {
             filesToProcess = new String[1];
             filesToProcess[0] = args[0];
         } else if (isDirectory) {
+            File directory = new File(args[0]);
+            File[] files = directory.listFiles();
 
-            filesToProcess = new String[5];
+            int numberOfJackFiles = 0;
+            for (int i = 0; i < files.length; i++) {
+                if (files[i].isFile() && files[i].getName().endsWith(".jack")) {
+                    numberOfJackFiles++;
+                }
+            }
+
+            filesToProcess = new String[numberOfJackFiles];
+
+            numberOfJackFiles = 0;
+            for (int i = 0; i < files.length; i++) {
+                if (files[i].isFile() && files[i].getName().endsWith(".jack")) {
+                    // String filePath = files[i].toString();
+                    filesToProcess[numberOfJackFiles++] = files[i].toString();
+                }
+            }
+
         } else {
+            System.err.println("Please ensure either the path to a directory or Jack file is entered.");
             return;
         }
 
-        for (int fileNumber = 0; fileNumber < filesToProcess.length; fileNumber++) {
+        for (String currentFile : filesToProcess) {
+        // for (int fileNumber = 0; fileNumber < filesToProcess.length; fileNumber++) {
             try {
-                JackTokeniser jack = new JackTokeniser(filesToProcess[fileNumber]);
-                FileWriter file = new FileWriter(filesToProcess[fileNumber].substring(0, args[0].length() - 5) + ".xml");
-                System.out.println(filesToProcess[fileNumber]);
-                System.out.println(filesToProcess[fileNumber].substring(0, args[0].length() - 5) + ".xml");
+                JackTokeniser jack = new JackTokeniser(currentFile);
+                FileWriter writeFile = new FileWriter(currentFile.substring(0, currentFile.length() - 5) + ".xml"); 
 
                 // WARNING: Advance still needs to be processed/outputted one more time.
-                file.write("<tokens>\n");
+                writeFile.write("<tokens>\n");
                 while (jack.advance()){
                     if (!jack.getCurrentTokenType().equals("NONE")) {
-                        file.write(String.format("<%s> %s </%s>\n", 
+                        writeFile.write(String.format("<%s> %s </%s>\n", 
                             jack.getCurrentTokenType(), jack.getCurrentToken(), jack.getCurrentTokenType()));
                     }
                 }
                 if (!jack.getCurrentTokenType().equals("NONE")) {
-                        file.write(String.format("<%s> %s </%s>\n", 
+                        writeFile.write(String.format("<%s> %s </%s>\n", 
                             jack.getCurrentTokenType(), jack.getCurrentToken(), jack.getCurrentTokenType()));
                 }
-                file.write("</tokens>\n");
+                writeFile.write("</tokens>\n");
 
-                file.close();
+                writeFile.close();
             }
             catch (Exception e) {
                 System.out.println(e);
