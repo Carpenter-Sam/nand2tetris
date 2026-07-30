@@ -75,7 +75,7 @@ public class JackCompiler {
         // for (int fileNumber = 0; fileNumber < filesToProcess.length; fileNumber++) {
             try {
                 JackTokeniser jack = new JackTokeniser(currentFile);
-                FileWriter writeFile = new FileWriter(currentFile.substring(0, currentFile.length() - 5) + ".xml"); 
+                FileWriter writeFile = new FileWriter(currentFile.substring(0, currentFile.length() - 5) + ".Txml"); 
 
                 // WARNING: Advance still needs to be processed/outputted one more time.
                 writeFile.write("<tokens>\n");
@@ -95,8 +95,30 @@ public class JackCompiler {
             }
             catch (Exception e) {
                 System.out.println(e);
+                
+                // Delete file if things go wrong. Disabled for better debugging.
+                // File fileToDelete = new File(currentFile.substring(0, currentFile.length() - 5) + ".Txml");
+                // fileToDelete.delete();
+
+                // Stop compilation at this point.
+                break;
+            }
+
+            // Now CompileEngine will read from .Txml and write to .xml, deleting .xml if things go wring and deleting .Txml no matter what.
+            try {
+                // Create CompilationEngine.
+                // Let it run.
+            } catch (Exception e) {
+                // Things have gone wrong. Delete .xml outside of debugging.
+                // File fileToDelete = new File(currentFile.substring(0, currentFile.length() - 5) + ".xml");
+                // fileToDelete.delete();
+            } finally {
+                // Temporary .Txml file deleted no matter what.
+                File fileToDelete = new File(currentFile.substring(0, currentFile.length() - 5) + ".Txml");
+                fileToDelete.delete();
             }
         }
 
     }
+
 }
