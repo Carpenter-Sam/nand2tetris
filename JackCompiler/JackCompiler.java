@@ -106,9 +106,12 @@ public class JackCompiler {
 
             // Now CompileEngine will read from .Txml and write to .xml, deleting .xml if things go wring and deleting .Txml no matter what.
             try {
-                // Create CompilationEngine.
-                // Let it run.
+                // Create CompilationEngine, which will run automatically.
+                CompilationEngine engine = new CompilationEngine(new File(currentFile.substring(0, currentFile.length() - 5) + ".Txml"), 
+                                                                 new File(currentFile.substring(0, currentFile.length() - 5) + ".xml"));
+                
             } catch (Exception e) {
+                System.err.println(e);
                 // Things have gone wrong. Delete .xml outside of debugging.
                 // File fileToDelete = new File(currentFile.substring(0, currentFile.length() - 5) + ".xml");
                 // fileToDelete.delete();

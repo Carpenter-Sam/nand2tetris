@@ -1,33 +1,48 @@
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.BufferedWriter;
+import java.io.BufferedReader;
 
 class CompilationEngine {
-	private FileReader readFile;
-	private FileWriter writeFile;
+	private BufferedReader reader;
+	private BufferedWriter writer;
+	int line_number = 0;
 
 	// Creates a new compilation engine with the given input and output.
 	// The next routine called must be compileClass.
 	public CompilationEngine(File read, File write) throws Exception {
 		try {
-			readFile = new FileReader(read);
+			reader = new BufferedReader(new FileReader(read));
 		} catch (Exception e) {
 			throw new Exception("ERROR: " + e + "\nERROR: CompilationEngine cannot find intermediate file: " + read);
 		}
 		
 
 		try {
-			writeFile = new FileWriter(write);
+			writer = new BufferedWriter(new FileWriter(write));
 		} catch (Exception e) {
 			throw new Exception("ERROR: " + e + "\nERROR: CompilationEngine cannot write to file: " + read);
 		}
 
+		// Check if file starts correctly.
+		line_number++;
+		if (!reader.readLine().equals("<tokens>")) {
+			throw new Exception("ERROR: CompilationEngine file input expected to start with '<tokens>'.");
+		}
+
 		compileClass();
+
+		// Check if file ends correctly.
+		line_number++;
+		if (!reader.readLine().equals("<tokens>")) {
+			throw new Exception("ERROR: CompilationEngine  file input expected to start with '<tokens>'.");
+		}
 	}
 	
 	// Compiles a complete class.
 	void compileClass() {
-		
+		expect("class", TokenType.keyword);
 	}
 	
 	// Compiles a static variable declaration, of a field declaration.
@@ -99,4 +114,9 @@ class CompilationEngine {
 	// else
 	// 	advance...
 	// }
+
+	private String expect(String expectedToken, TokenType expectedTokenType) {
+
+		return "";
+	}
 }
