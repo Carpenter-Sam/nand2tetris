@@ -7,7 +7,7 @@ import java.io.BufferedReader;
 class CompilationEngine {
 	private BufferedReader reader;
 	private BufferedWriter writer;
-	int line_number = 0;
+	int lineNumber = 0;
 
 	// Creates a new compilation engine with the given input and output.
 	// The next routine called must be compileClass.
@@ -15,18 +15,19 @@ class CompilationEngine {
 		try {
 			reader = new BufferedReader(new FileReader(read));
 		} catch (Exception e) {
-			throw new Exception("ERROR: " + e + "\nERROR: CompilationEngine cannot find intermediate file: " + read);
+			System.err.println("ERROR: " + e);
+			throw new Exception("ERROR: CompilationEngine cannot find intermediate file: " + read);
 		}
-		
 
 		try {
 			writer = new BufferedWriter(new FileWriter(write));
 		} catch (Exception e) {
-			throw new Exception("ERROR: " + e + "\nERROR: CompilationEngine cannot write to file: " + read);
+			System.err.println("ERROR: " + e);
+			throw new Exception("ERROR: CompilationEngine cannot write to file: " + read);
 		}
 
 		// Check if file starts correctly.
-		line_number++;
+		lineNumber++;
 		if (!reader.readLine().equals("<tokens>")) {
 			throw new Exception("ERROR: CompilationEngine file input expected to start with '<tokens>'.");
 		}
@@ -34,14 +35,14 @@ class CompilationEngine {
 		compileClass();
 
 		// Check if file ends correctly.
-		line_number++;
+		lineNumber++;
 		if (!reader.readLine().equals("<tokens>")) {
 			throw new Exception("ERROR: CompilationEngine  file input expected to start with '<tokens>'.");
 		}
 	}
 	
 	// Compiles a complete class.
-	void compileClass() {
+	void compileClass() throws Exception {
 		expect("class", TokenType.keyword);
 	}
 	
@@ -115,8 +116,126 @@ class CompilationEngine {
 	// 	advance...
 	// }
 
-	private String expect(String expectedToken, TokenType expectedTokenType) {
+	private String expect(String expectedToken, TokenType expectedTokenType) throws Exception {
+		lineNumber++;
+		String line;
+		try {
+			line = reader.readLine(); 
+		} catch (Exception e) {
+			System.err.println("ERROR: " + e);
+			throw new Exception("ERROR: Compilation Engine unable to read next line of file.");
+		}
+
+		if (line.isEmpty()) {
+			throw new Exception(String.format("ERROR: Compilation Engine got back empty line when expecting '%s' at line %d.",
+								expectedToken, lineNumber));
+		} else if (line.equals("-1")) {
+			throw new Exception(String.format("ERROR: Compilation Engine file input ended early when expecting '%s' at line %d.",
+								expectedToken, lineNumber));
+		}
+		// throw new Exception(String.format("ERROR: Compilation Engine expected '%s' at line %d.",
+		// 					expectedToken, lineNumber));
+		
+		try {
+			splitLine(line);
+		} catch (Exception e) {
+			System.err.println(e);
+			throw new Exception(String.format("ERROR: Compilation Engine error occured when splitting line expecting '%s' at line %d.",
+								expectedToken, lineNumber));
+		}
+		
+	
 
 		return "";
+	}
+
+	public String[] splitLine(String line) throws Exception {
+		int endOfElement1 = -1;
+		int startOfToken = -1;
+		int endOfToken = -1;
+		int startOfElement2 = -1;
+		int endOfElement2 = -1;
+
+		int lineIter = 0;
+		int lineEnd = line.length();
+		
+		// Check the line is of minimum appropriate length.
+		if (lineEnd < 10) {
+			throw new Exception("ERROR: Compilation Engine expected longer line in format '<e> t </e>'.");
+		}
+
+		// Need to check the following format <element> token </element>
+		
+		// Check for starting <
+		if (line.charAt(lineIter++) != '<') {
+			throw new Exception("ERROR: Compilation Engine expected line to start with '<'.");
+		} 
+
+		// Check for closing > or end of line
+		while (lineIter != lineEnd && line.charAt(lineIter) != '>') {lineIter++;}
+		// Check if end of line
+		if (lineIter == lineEnd) {
+			throw new Exception("ERROR: Compilation Engine expected longer line in format '<e> t </e>'.");
+		// If not end of line, it means that the current lineIter is pointing at the closing >.
+		} else {
+			endOfElement1 = lineEnd++ - 1;
+		}
+
+		// Check for space after first set of angle brackets
+		if (line.charAt(lineIter++) != ' ') {
+			throw new Exception("ERROR: Compilation Engine expected space after first set of angle brackets, in the line.");
+		} else {
+			startOfToken = lineIter;
+		}
+
+		// Check for closing ending space or end of line
+		while (lineIter != lineEnd && line.charAt(lineIter) != ' ') {lineIter++;}
+		// Check if end of line
+		if (lineIter == lineEnd) {
+			throw new Exception("ERROR: Compilation Engine expected longer line in format '<e> t </e>'.");
+		// If not end of line, it means that the current lineIter is pointing at the closing space.
+		} else {
+			endOfToken = lineEnd++ - 1;
+		}
+
+		// Check for opening angle bracket and then slash after token.
+		if (line.charAt(lineIter++) != '<') {
+			throw new Exception("ERROR: Compilation Engine expected open bracket after token, in the line.");
+		} else if (line.charAt(lineIter++) != '/') {
+			throw new Exception("ERROR: Compilation Engine expected slash after open bracket, in the line.");
+		} else {
+			startOfElement2 = lineIter;
+		}
+
+		// Check for closing > or end of line
+		while (lineIter != lineEnd && line.charAt(lineIter) != '>') {lineIter++;}
+		// Check if end of line
+		if (lineIter == lineEnd) {
+			throw new Exception("ERROR: Compilation Engine expected longer line in format '<e> t </e>'.");
+		// If not end of line, it means that the current lineIter is pointing at the closing >.
+		} else {
+			endOfElement2 = lineEnd++ - 1;
+		}
+
+		// Add check to ensure nothing after final angle bracket.
+
+		// Add support for single-line comments optionally.
+
+		// Optionally, add logic checks for start/end of positions (i.e., element1 doesn't end after element 2 starts).
+
+		// Return string array.
+		String []splitStrings = new String[3];
+
+		// Element 1
+		splitStrings[0] = line.substring(0, endOfElement1);
+
+		// Token
+		splitStrings[1] = line.substring(startOfToken, endOfToken);
+
+		// Element 2
+		splitStrings[2] = line.substring(startOfElement2, endOfElement2);
+
+		return splitStrings;
+
 	}
 }
