@@ -377,7 +377,22 @@ class CompilationEngine {
 			writeLine(String.format("<identifier> %s </identifier>", previousToken));
 		}
 
-		// ('I' expression']')? 
+		// ('['expression']')? 
+		// '('
+		if (expect(new String[]{"["}, new TokenType[]{TokenType.symbol}, false)) {
+			writeLine("<symbol> [ </symbol>");
+
+			// expression
+			compileExpression();
+
+			// ']'
+			if (expect(new String[]{"]"}, new TokenType[]{TokenType.symbol}, true)) {
+				writeLine("<symbol> ] </symbol>");
+			}
+		} else {
+			usePreviousLine = true;
+		}
+
 		// '=' 
 		if (expect(new String[]{"="}, new TokenType[]{TokenType.symbol}, true)) {
 			writeLine("<symbol> = </symbol>");
@@ -398,7 +413,13 @@ class CompilationEngine {
 	// Compiles an if statment, possibly with a trailing else clause.
 	private void compileIfStatement() throws Exception {
 		// code for compiling an if statement
-		// '('expression ')' '{' statements '}' ('else' '{' statements '}') ?
+		// '('
+		// expression 
+		// ')' 
+		// '{'
+		//  statements 
+		// '}' 
+		// ('else' '{' statements '}')?
 
 		spaceCount--;
 		writeLine("<ifStatement>");
