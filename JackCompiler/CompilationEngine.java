@@ -539,6 +539,13 @@ class CompilationEngine {
 	
 	// Compiles an expression.
 	private boolean compileExpression(boolean allowedToFail) throws Exception {
+		writeLine("<expression>");
+		spaceCount++;
+
+		
+
+		spaceCount--;
+		writeLine("</expression>");
 		return true;
 	}
 	
