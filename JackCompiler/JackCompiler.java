@@ -117,8 +117,8 @@ public class JackCompiler {
                 // fileToDelete.delete();
             } finally {
                 // Temporary .Txml file deleted no matter what.
-                File fileToDelete = new File(currentFile.substring(0, currentFile.length() - 5) + ".Txml");
-                fileToDelete.delete();
+                // File fileToDelete = new File(currentFile.substring(0, currentFile.length() - 5) + ".Txml");
+                // fileToDelete.delete();
             }
         }
 

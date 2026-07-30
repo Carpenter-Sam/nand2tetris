@@ -8,12 +8,18 @@ import java.io.BufferedReader;
 class CompilationEngine {
 	private BufferedReader reader;
 	private BufferedWriter writer;
-	int lineNumber = 0;
-	int spaceCount = 0;
+	private int lineNumber = 0;
+	private int spaceCount = 0;
 
-	boolean stringStored = false;
-	boolean potentiallyMore = false;
-	String previousLine;
+	private boolean usePreviousLine = false;
+	private String previousToken;
+	private String previousLine;
+	
+	private String[] keywords = {"class", "constructor", "function", "method",
+			 					 "field", "static", "var", "int", "char", "boolean",
+			 					 "void", "true", "false", "null", "this", "let", "do",
+								 "if", "else", "while", "return"};
+	
 
 	// Creates a new compilation engine with the given input and output.
 	// The next routine called must be compileClass.
@@ -44,8 +50,8 @@ class CompilationEngine {
 
 		// Check if file ends correctly.
 		lineNumber++;
-		if (!reader.readLine().equals("<tokens>")) {
-			throw new Exception("ERROR: CompilationEngine  file input expected to start with '<tokens>'.");
+		if (!reader.readLine().equals("</tokens>")) {
+			throw new Exception("ERROR: CompilationEngine  file input expected to end with '</tokens>'.");
 		}
 	}
 
@@ -59,42 +65,62 @@ class CompilationEngine {
 	// Compiles a complete class.
 	// class: 'class' className '{' classVarDec* subroutineDec* '}'
 	void compileClass() throws Exception {
+		writeLine("<class>");
 		spaceCount++;
 
 		// 'class'
-		expect(new String[]{"class"}, TokenType.keyword, '0');
-		writeLine("<class>");
+		if (expect(new String[]{"class"}, TokenType.keyword, false, true)) {
+			writeLine("<keyword> class </keyword>");
+		}
 		
 		// className 
-		writeLine(expect(new String[]{"className"}, TokenType.identifier, '0'));
+		if (expect(new String[]{"className"}, TokenType.identifier, false, true)) {
+			writeLine(String.format("<identifier> %s </identifier>", previousToken));
+		} 
 
 		// '{' 
-		writeLine(expect(new String[]{"{"}, TokenType.symbol, '0'));
+		if (expect(new String[]{"{"}, TokenType.symbol, false, true)) {
+			writeLine("<keyword> { </keyword>");
+		}
 
 		// classVarDec* 
+		while(compileClassVarDec(false));
 
 		// subroutineDec* 
 
 		// '}'
-		writeLine(expect(new String[]{"}"}, TokenType.symbol, '0'));
+		if (expect(new String[]{"}"}, TokenType.symbol, false, true)) {
+			writeLine("<keyword> { </keyword>");
+		}
 
 		spaceCount--;
+		writeLine("</class>");
 	}
 	
 	// Compiles a static variable declaration, of a field declaration.
 	// classVarDec: ('static'|'field') type varName (',' varName)* ';'
-	private void compileClassVarDec() throws Exception {
-		spaceCount++;
-		
+	private boolean compileClassVarDec(boolean allowedToFail) throws Exception {
 		// ('static'|'field')
-		writeLine(expect(new String[]{"static", "field"}, TokenType.identifier, '|'));
+		if (!expect(new String[]{"static", "field"}, TokenType.identifier, false, allowedToFail)) {
+			usePreviousLine = true;
+			return false;
+		} else {
+			writeLine("<classVarDec>");
+			spaceCount++;
+			writeLine(String.format("<keyword> %s </keyword>", previousToken));
+		}
 
 		// type 
+		expect(new String[]{"int", "char", "boolean"}, TokenType.identifier, true, true);
+		
+
 		// varName 
 		// (',' varName)* 
 		// ';'
 
 		spaceCount--;
+		writeLine("</classVarDec>");
+		return true;
 	}
 	
 	// Compiles a complete method, function, or a constructor.
@@ -158,14 +184,109 @@ class CompilationEngine {
 	// compileExpressionList()
 
 	// Reads the next line of the .Txml and checks expected token is there with expected token type.
-	private String expect(String []expectedTokens, TokenType expectedTokenType, char expectType) throws Exception {
+	// private String expect(String []expectedTokens, TokenType expectedTokenType, char expectType) throws Exception {
+	// 	String line;
+	// 	potentiallyMore = false;
+
+	// 	// Only read next line if there isn't a previous line that needs to be read.
+	// 	if (stringStored) {
+	// 		line = previousLine;
+	// 		stringStored = false;
+	// 	} else {
+	// 		lineNumber++;
+	// 		try {
+	// 			line = reader.readLine(); 
+	// 		} catch (Exception e) {
+	// 			System.err.println("ERROR: " + e);
+	// 			throw new Exception("ERROR: Compilation Engine unable to read next line of file.");
+	// 		}
+
+	// 		if (line.isEmpty()) {
+	// 			throw new Exception(String.format("ERROR: Compilation Engine got back empty line when expecting '%s' at line %d.",
+	// 								Arrays.toString(expectedTokens), lineNumber));
+	// 		} else if (line.equals("-1")) {
+	// 			throw new Exception(String.format("ERROR: Compilation Engine file input ended early when expecting '%s' at line %d.",
+	// 								Arrays.toString(expectedTokens), lineNumber));
+	// 		}
+	// 	}
+		
+	// 	String[] splitStrings;
+	// 	try {
+	// 		splitStrings = splitLine(line);
+	// 	} catch (Exception e) {
+	// 		System.err.println(e);
+	// 		throw new Exception(String.format("ERROR: Compilation Engine error occured when splitting line expecting '%s' at line %d.",
+	// 							Arrays.toString(expectedTokens), lineNumber));
+	// 	}
+
+	// 	System.out.println(Arrays.toString(splitStrings));
+		
+		
+	// 	// Check that the two elements are of the same type
+	// 	if (!splitStrings[0].equals(splitStrings[2])) {
+	// 		throw new Exception(String.format("ERROR: Compilation Engine expected elements of equal types on line %d but instead got types '%s' and '%s'.",
+	// 										  lineNumber, splitStrings[0], splitStrings[2]));
+	// 	}
+
+	// 	// If one of these types, then a failed check doesn't mean a fail.
+	// 	boolean returnPotentially = false;
+	// 	boolean doNotFail = false;
+	// 	if (expectType == '*' || expectType == '+') {
+	// 		returnPotentially = true;
+	// 		if (expectType == '?') {
+	// 			doNotFail = true;
+	// 		}
+	// 	}
+		
+	// 	// Check if the two elements are equal to the expected type
+	// 	if (!splitStrings[0].equals(expectedTokenType.name())) {
+	// 		if (doNotFail) {
+	// 			previousLine = line;
+	// 			stringStored = true;
+	// 			return "";
+	// 		} else {
+	// 			throw new Exception(String.format("ERROR: Compilation Engine expected element of type '%s' on line %d but instead got type '%s'.",
+	// 										  expectedTokenType.name(), lineNumber, splitStrings[0]));
+	// 		}
+		
+	// 	// If tokenType is an identifier then unknown identifier token, so no need to check if it equals expectedToken.
+	// 	} else if (expectedTokenType == TokenType.identifier) {
+	// 		if (returnPotentially) {
+	// 			potentiallyMore = true;
+	// 		}
+	// 		return splitStrings[1];
+	// 	}
+
+	// 	// Check if the token is same as any expectedTokens
+	// 	for (String token : expectedTokens) {
+	// 		if (token.equals(splitStrings[1])) {
+	// 			if (returnPotentially) {
+	// 				potentiallyMore = true;
+	// 			}
+	// 			return splitStrings[1];
+	// 		}
+	// 	}
+		
+	// 	if (doNotFail) {
+	// 			previousLine = line;
+	// 			stringStored = true;
+	// 			return "";
+	// 	} else {
+	// 	throw new Exception(String.format("ERROR: Compilation Engine expected token '%s' on line %d but instead got '%s'.",
+	// 										Arrays.toString(expectedTokens), lineNumber, splitStrings[1]));
+	// 	}
+	// }
+
+	// If not told to use the previous line, then expect reads a new line of the .Txml and stores it in case of later use.
+	// Expect checks for errors then checks to see if the token is valid, returning an error message if it isn't.
+	// If it is valid then it returns a boolean and a potential identifier.
+	private boolean expect(String []expectedTokens, TokenType expectedTokenType, boolean bypassKeywordCheck, boolean fails) throws Exception {
 		String line;
-		potentiallyMore = false;
 
 		// Only read next line if there isn't a previous line that needs to be read.
-		if (stringStored) {
+		if (usePreviousLine) {
 			line = previousLine;
-			stringStored = false;
+			usePreviousLine = false;
 		} else {
 			lineNumber++;
 			try {
@@ -195,59 +316,57 @@ class CompilationEngine {
 
 		System.out.println(Arrays.toString(splitStrings));
 		
-		
+		String errorMsg = new String();
+		boolean validToken = true;
 		// Check that the two elements are of the same type
 		if (!splitStrings[0].equals(splitStrings[2])) {
-			throw new Exception(String.format("ERROR: Compilation Engine expected elements of equal types on line %d but instead got types '%s' and '%s'.",
-											  lineNumber, splitStrings[0], splitStrings[2]));
-		}
-
-		// If one of these types, then a failed check doesn't mean a fail.
-		boolean returnPotentially = false;
-		boolean doNotFail = false;
-		if (expectType == '*' || expectType == '+') {
-			returnPotentially = true;
-			if (expectType == '?') {
-				doNotFail = true;
-			}
+			validToken = false;
+			errorMsg = String.format("ERROR: Compilation Engine expected elements of equal types on line %d but instead got types '%s' and '%s'.",
+											  lineNumber, splitStrings[0], splitStrings[2]);
 		}
 		
 		// Check if the two elements are equal to the expected type
+		if (bypassKeywordCheck) {
+			splitStrings[0] = "identifier";
+			splitStrings[2] = "identifier";
+		}
 		if (!splitStrings[0].equals(expectedTokenType.name())) {
-			if (doNotFail) {
-				previousLine = line;
-				stringStored = true;
-				return "";
-			} else {
-				throw new Exception(String.format("ERROR: Compilation Engine expected element of type '%s' on line %d but instead got type '%s'.",
-											  expectedTokenType.name(), lineNumber, splitStrings[0]));
-			}
-		
-		// If tokenType is an identifier then unknown identifier token, so no need to check if it equals expectedToken.
-		} else if (expectedTokenType == TokenType.identifier) {
-			if (returnPotentially) {
-				potentiallyMore = true;
-			}
-			return splitStrings[1];
+			validToken = false;
+			errorMsg = String.format("ERROR: Compilation Engine expected element of type '%s' on line %d but instead got type '%s'.",
+											  expectedTokenType.name(), lineNumber, splitStrings[0]);
 		}
-
-		// Check if the token is same as any expectedTokens
-		for (String token : expectedTokens) {
-			if (token.equals(splitStrings[1])) {
-				if (returnPotentially) {
-					potentiallyMore = true;
+		
+		// If identifier, then checks need to be made to see if it's a valid identifier or not.
+		if (expectedTokenType == TokenType.identifier) {
+			// We check if it's equal to a keyword and if it is then we check to see if it's a valid keyword or not.
+			for (String keyword : keywords) {
+				if (splitStrings[1].equals(keyword)) {
+					validToken = isKeywordAllowed(keyword, expectedTokens);
+					break;
 				}
-				return splitStrings[1];
+			}
+		} else {
+			validToken = false;
+			// Check if the token is same as any expectedTokens
+			for (String token : expectedTokens) {
+				if (token.equals(splitStrings[1])) {
+					validToken = true;
+				}
 			}
 		}
 		
-		if (doNotFail) {
-				previousLine = line;
-				stringStored = true;
-				return "";
+		if (!validToken) {
+			errorMsg = String.format("ERROR: Compilation Engine expected token '%s' on line %d but instead got '%s'.",
+												Arrays.toString(expectedTokens), lineNumber, splitStrings[1]);
+		}
+		
+
+		previousLine = line;
+		previousToken = splitStrings[1];
+		if (fails && !validToken) {
+			throw new Exception(errorMsg);
 		} else {
-		throw new Exception(String.format("ERROR: Compilation Engine expected token '%s' on line %d but instead got '%s'.",
-											Arrays.toString(expectedTokens), lineNumber, splitStrings[1]));
+			return validToken;
 		}
 	}
 
@@ -343,6 +462,16 @@ class CompilationEngine {
 
 		return splitStrings;
 
+	}
+
+	
+	private boolean isKeywordAllowed(String keywordToCheck, String[] allowedKeywords) {
+		for (String keyword : allowedKeywords) {
+			if (keyword.equals(keywordToCheck)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	// private void splitLineTest() throws Exception {
