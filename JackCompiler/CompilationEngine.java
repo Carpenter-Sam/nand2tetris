@@ -542,7 +542,22 @@ class CompilationEngine {
 		writeLine("<expression>");
 		spaceCount++;
 
-		// term (op term)*
+		// term
+		compileTerm();
+		// (op term)*
+		while (true) {
+			// 'op'
+			if (expect(new String[]{"+", "-", "*", "/", "&", "|", "<", ">", "="}, new TokenType[]{TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol}, false)) {
+				writeLine("<symbol> , </symbol>");
+			} else {
+				usePreviousLine = true;
+				break;
+			}
+
+			// term
+			compileTerm();
+		} 
+
 
 		spaceCount--;
 		writeLine("</expression>");
