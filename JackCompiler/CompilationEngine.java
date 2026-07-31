@@ -735,15 +735,25 @@ class CompilationEngine {
 	}
 	
 	// Compiles a (possible empty) comma-separated list of expressions.
-	// compileExpressionList() throws Exception {
-	// 	writeLine("<expressionList>");
-	// 	spaceCount++;
-	// 
-	// 	(expression ('›' expression) *)?
-	//
-	// 	spaceCount--;
-	// 	writeLine("</expressionList>");
-	// }
+	private void compileExpressionList() throws Exception {
+		writeLine("<expressionList>");
+		spaceCount++;
+	
+		// (expression (',' expression)* )?
+		// expression 
+		if (compileTerm(false, false)) {
+			// (',' expression)*
+			while (expect(new String[]{","}, new TokenType[]{TokenType.symbol}, false)) {
+				writeLine("<symbol> , </symbol>");
+
+				compileExpression(true);
+			}
+		}
+		usePreviousLine = true;
+	
+		spaceCount--;
+		writeLine("</expressionList>");
+	}
 
 	// If not told to use the previous line, then expect reads a new line of the .Txml and stores it in case of later use.
 	// Expect checks for errors then checks to see if the token is valid, returning an error message if it isn't.
