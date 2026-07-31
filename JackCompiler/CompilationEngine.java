@@ -60,13 +60,14 @@ class CompilationEngine {
 	}
 
 	void writeLine(String line) throws Exception {
-		for (int i = 0; i < (spaceCount * 2); i++) {
-			writer.write(" ");
+		for (int i = 0; i < spaceCount; i++) {
+			writer.write("  ");
 			System.out.printf(" ");
 		}
 
 		System.err.println(line);
 		writer.write(line); writer.newLine();
+		writer.flush();
 	}
 	
 	// Compiles a complete class.
