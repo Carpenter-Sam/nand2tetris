@@ -58,7 +58,7 @@ class CompilationEngine {
 	}
 
 	void writeLine(String line) throws Exception {
-		for (int i = 0; i < spaceCount; i++) {
+		for (int i = 0; i < (spaceCount * 2); i++) {
 			writer.write(" ");
 			System.out.printf(" ");
 		}
@@ -92,11 +92,11 @@ class CompilationEngine {
 		while (compileClassVarDec(false)) {};
 
 		// subroutineDec* 
-		while (compileSubroutineDec(false)) {};
+		while (compileSubroutineDec(false)) {usePreviousLine = true;};
 
 		// '}'
 		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> { </symbol>");
+			writeLine("<symbol> } </symbol>");
 		}
 
 		spaceCount--;
@@ -510,6 +510,8 @@ class CompilationEngine {
 		spaceCount--;
 		writeLine("</statements>");
 
+		usePreviousLine = true;
+
 		// '}'
 		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
 			writeLine("<symbol> } </symbol>");
@@ -579,7 +581,8 @@ class CompilationEngine {
 	// Compiles an expression.
 	private boolean compileExpression(boolean allowedToFail) throws Exception {
 		// term
-		if ((!compileTerm(true, false)) && allowedToFail) {
+		boolean atLeastOneTerm = compileTerm(true, false);
+		if ((!atLeastOneTerm) && allowedToFail) {
 			throw new Exception(String.format("ERROR: Compilation engine expected expression on line %d.", lineNumber));
 		} 
 		
@@ -597,10 +600,13 @@ class CompilationEngine {
 			compileTerm(false, true);
 		} 
 
-
-		spaceCount--;
-		writeLine("</expression>");
-		return true;
+		if (atLeastOneTerm) {
+			spaceCount--;
+			writeLine("</expression>");	
+			return true;
+		} else {
+			return false;
+		}
 	}
 	
 	// Compiles a term.
@@ -699,10 +705,7 @@ class CompilationEngine {
 			// varName'['expression']' 
 			// tokenType of identifier followed by a symbol of token '['
 			if (expect(new String[]{"["}, new TokenType[]{TokenType.symbol}, false)) { 
-				//'['
-				if (expect(new String[]{"["}, new TokenType[]{TokenType.symbol}, true)) {
-					writeLine("<symbol> [ </symbol>");
-				}
+				writeLine("<symbol> [ </symbol>");
 
 				// expression
 				compileExpression(true);
@@ -885,7 +888,7 @@ class CompilationEngine {
 
 		int lineIter = 0;
 		int lineEnd = line.length();
-		
+
 		// Check the line is of minimum appropriate length.
 		if (lineEnd < 10) {
 			throw new Exception("ERROR: Compilation Engine expected longer line in format '<e> t </e>'.");
