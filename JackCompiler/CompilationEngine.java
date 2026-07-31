@@ -62,10 +62,10 @@ class CompilationEngine {
 	void writeLine(String line) throws Exception {
 		for (int i = 0; i < spaceCount; i++) {
 			writer.write("  ");
-			System.out.printf(" ");
+			// System.out.printf("  ");
 		}
 
-		System.err.println(line);
+		// System.err.println(line);
 		writer.write(line); writer.newLine();
 		writer.flush();
 	}
@@ -95,7 +95,7 @@ class CompilationEngine {
 		while (compileClassVarDec(false)) {};
 
 		// subroutineDec* 
-		while (compileSubroutineDec(false)) {usePreviousLine = true;};
+		while (compileSubroutineDec(false)) {};
 
 		// '}'
 		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
@@ -266,6 +266,9 @@ class CompilationEngine {
 		compileStatements();
 		spaceCount--;
 		writeLine("</statements>");
+		// System.out.println("FAILED: " + previousLine + " " + usePreviousLine);
+
+		usePreviousLine = true;
 		
 		// '}'
 		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
@@ -333,9 +336,9 @@ class CompilationEngine {
 		
 		// statement*
 		// statement: letStatement | ifStatement | whileStatement | doStatement | returnStatement
-		boolean atLeastOneStatement = false;
+		boolean lastOneTrue = false;
 		while (expect(new String[]{"let", "if", "while", "do", "return"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.keyword}, false)) {
-			atLeastOneStatement = true;
+			lastOneTrue = true;
 
 			switch(previousToken){
 				case "let":
@@ -378,7 +381,7 @@ class CompilationEngine {
 			}
 			 
 		} 
-		if (!atLeastOneStatement) {
+		if (!lastOneTrue) {
 			usePreviousLine = true;
 		}
 	}
@@ -451,6 +454,8 @@ class CompilationEngine {
 		spaceCount--;
 		writeLine("</statements>");
 
+		usePreviousLine = true;
+
 		// '}' 
 		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
 			writeLine("<symbol> } </symbol>");
@@ -472,6 +477,8 @@ class CompilationEngine {
 			compileStatements();
 			spaceCount--;
 			writeLine("</statements>");
+
+			usePreviousLine = true;
 
 			// '}'
 			if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
@@ -552,7 +559,7 @@ class CompilationEngine {
 
 		// expressionList
 		compileExpressionList();
-		
+
 		// ')'
 		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
 			writeLine("<symbol> ) </symbol>");
@@ -592,7 +599,7 @@ class CompilationEngine {
 		// (op term)*
 		while (true) {
 			// 'op'
-			if (expect(new String[]{"+", "-", "*", "/", "&amp", "|", "&lt;", "&gt;", "="}, new TokenType[]{TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol}, false)) {
+			if (expect(new String[]{"+", "-", "*", "/", "&amp;", "|", "&lt;", "&gt;", "="}, new TokenType[]{TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol}, false)) {
 				writeLine(String.format("<symbol> %s </symbol>", previousToken));
 			} else {
 				usePreviousLine = true;
@@ -669,8 +676,7 @@ class CompilationEngine {
 
 		// '('expression')' 
 		// tokenType is symbol of token '('
-		if (!validTerm && expect(new String[]{"("}, new TokenType[]{TokenType.keyword}, false)) {
-			System.out.println("expression correct");
+		if (!validTerm && expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, false)) {
 			writeLine(String.format("<symbol> ( </symbol>")); 
 			validTerm = true;
 
@@ -678,9 +684,11 @@ class CompilationEngine {
 			compileExpression(true);
 
 			// ')' 
-			if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {
+			if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
 				writeLine("<symbol> ) </symbol>");
 			}
+
+			doNotUsePreviousLine = true;
 
 		} else {
 			usePreviousLine = true;
@@ -755,8 +763,6 @@ class CompilationEngine {
 				usePreviousLine = true;
 			}
 
-		} else {
-			usePreviousLine = true;
 		}
 
 		if (validTerm) {
