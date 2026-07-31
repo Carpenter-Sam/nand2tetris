@@ -511,16 +511,37 @@ class CompilationEngine {
 	
 	// Compiles a do statement.
 	private void compileDo() throws Exception {
-		// subroutineCall 
-		// TODO 
+		// subroutineCall: subroutineName '(' expressionList ')' | ( className | varName )' '.' subroutineName '(' expressionList ')'
+		// identifier = subroutineName or ( className | varName )
+		if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
+			writeLine(String.format("<identifier> %s </identifier>", previousToken));
+		}
+		// then check if '.' or not
+		if (expect(new String[]{"."}, new TokenType[]{TokenType.symbol}, false)) {
+			// '.' subroutineName
+			// '.'
+			writeLine("<symbol> . </symbol>");
 
+			// subroutineName
+			if (expect(new String[]{"subroutineName"}, new TokenType[]{TokenType.identifier}, true)) {
+				writeLine(String.format("<identifier> %s </identifier>", previousToken));
+			}
+		} else {
+			usePreviousLine = true;
+		}
+		// '(' expressionList ')'
+		// '('
+		if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<symbol> ( </symbol>");
+		}
 
-
-
-		// subroutineCall: subroutineName '(' expressionList ')' | ( className | varName)' '.' subroutineName '('expressionList ')'
-
-
-
+		// expressionList
+		compileExpressionList();
+		
+		// ')'
+		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
+			writeLine("<symbol> ) </symbol>");
+		}
 		
 		// ';'
 		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
@@ -650,13 +671,12 @@ class CompilationEngine {
 
 		if (!validTerm && expect(new String[]{"identifier"}, new TokenType[]{TokenType.identifier}, false)) {
 			String varToken = previousToken;
+			// varName|subroutineName
+			writeLine(String.format("<identifier> %s </identifier>", varToken));
 
 			// varName'['expression']' 
 			// tokenType of identifier followed by a symbol of token '['
 			if (expect(new String[]{"["}, new TokenType[]{TokenType.symbol}, false)) { 
-				// varName
-				writeLine(String.format("<identifier> %s </identifier>", varToken));
-
 				//'['
 				if (expect(new String[]{"["}, new TokenType[]{TokenType.symbol}, true)) {
 					writeLine("<symbol> [ </symbol>");
@@ -671,22 +691,38 @@ class CompilationEngine {
 				}
 
 			
-			// subroutine Call
-			// tokenType of identifier followed by symbol of token '('
-			} else if ((usePreviousLine = true) && expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, false)) {
+			// subroutine all: subroutineName '(' expressionList ')' | ( className | varName)' '.' subroutineName '(' expressionList ')'
+			// tokenType of identifier followed by symbol of token '(' or .
+			} else if ((usePreviousLine = true) && expect(new String[]{"(", "."}, new TokenType[]{TokenType.symbol, TokenType.symbol}, false)) {
+				// then check if '.' or not
+				if (previousToken.equals(".")) {
+					// '.' subroutineName
+					// '.'
+					writeLine("<symbol> . </symbol>");
+
+					// subroutineName
+					if (expect(new String[]{"subroutineName"}, new TokenType[]{TokenType.identifier}, true)) {
+						writeLine(String.format("<identifier> %s </identifier>", previousToken));
+					}
+				} else {
+					usePreviousLine = true;
+				}
+				// '(' expressionList ')'
+				// '('
+				if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {
+					writeLine("<symbol> ( </symbol>");
+				}
+
+				// expressionList
+				compileExpressionList();
 				
+				// ')'
+				if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
+					writeLine("<symbol> ) </symbol>");
+				}
 
-
-
-				// subroutineCall: subroutineName '(' expressionList ')' | ( className | varName)' '.' subroutineName '('expressionList ')'
-
-
-
-
-			// varName 
+			// varName  (already written)
 			// tokenType of identifier followed not by a symbol of token '['
-			} else {
-				writeLine(String.format("<identifier> %s </identifier>", varToken));
 			}
 		}
 		usePreviousLine = true;
