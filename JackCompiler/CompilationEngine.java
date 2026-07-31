@@ -55,6 +55,8 @@ class CompilationEngine {
 		if (!reader.readLine().equals("</tokens>")) {
 			throw new Exception("ERROR: CompilationEngine  file input expected to end with '</tokens>'.");
 		}
+
+		writer.close();
 	}
 
 	void writeLine(String line) throws Exception {
