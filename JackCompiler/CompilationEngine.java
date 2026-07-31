@@ -60,8 +60,11 @@ class CompilationEngine {
 	void writeLine(String line) throws Exception {
 		for (int i = 0; i < spaceCount; i++) {
 			writer.write(" ");
+			System.out.printf(" ");
 		}
-		writer.write("line"); writer.newLine();
+
+		System.err.println(line);
+		writer.write(line); writer.newLine();
 	}
 	
 	// Compiles a complete class.
@@ -327,37 +330,43 @@ class CompilationEngine {
 		
 		// statement*
 		// statement: letStatement | ifStatement | whileStatement | doStatement | returnStatement
-		if (expect(new String[]{"let", "if", "while", "do", "return"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.keyword}, false)) {
-			writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
-			
+		boolean atLeastOneStatement = false;
+		while (expect(new String[]{"let", "if", "while", "do", "return"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.keyword}, false)) {
+			atLeastOneStatement = true;
+
 			switch(previousToken){
 				case "let":
 					writeLine("<letStatement>");
 					spaceCount++;
-					compileLet();;
+					writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
+					compileLet();
 					break;
 
 				case "if":
 					writeLine("<ifStatement>");
 					spaceCount++;
+					writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
 					compileIfStatement();
 					break;
 
 				case "while":
 					writeLine("<whileStatement>");
 					spaceCount++;
+					writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
 					compileWhileStatement();
 					break;
 
 				case "do":
 					writeLine("<doStatement>");
 					spaceCount++;
+					writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
 					compileDo();
 					break;
 
 				case "return":
 					writeLine("<returnStatement>");
 					spaceCount++;
+					writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
 					compileReturn();
 					break;
 
@@ -365,7 +374,8 @@ class CompilationEngine {
 					throw new Exception("ERROR: Unusual compileStatements ending in the default statements switch case.");
 			}
 			 
-		} else {
+		} 
+		if (!atLeastOneStatement) {
 			usePreviousLine = true;
 		}
 	}
@@ -378,7 +388,7 @@ class CompilationEngine {
 		}
 
 		// ('['expression']')? 
-		// '('
+		// '['
 		if (expect(new String[]{"["}, new TokenType[]{TokenType.symbol}, false)) {
 			writeLine("<symbol> [ </symbol>");
 
@@ -407,7 +417,7 @@ class CompilationEngine {
 		}
 
 		spaceCount--;
-		writeLine("<letStatement>");
+		writeLine("</letStatement>");
 	}
 	
 	// Compiles an if statment, possibly with a trailing else clause.
@@ -470,7 +480,7 @@ class CompilationEngine {
 		}
 
 		spaceCount--;
-		writeLine("<ifStatement>");
+		writeLine("</ifStatement>");
 	}
 	
 	// Compiles a while statement.
@@ -569,15 +579,15 @@ class CompilationEngine {
 	// Compiles an expression.
 	private boolean compileExpression(boolean allowedToFail) throws Exception {
 		// term
-		if (!compileTerm(true, false) && allowedToFail) {
-			throw new Exception("ERROR: Compilation engine expected expression on line %d." + lineNumber);
+		if ((!compileTerm(true, false)) && allowedToFail) {
+			throw new Exception(String.format("ERROR: Compilation engine expected expression on line %d.", lineNumber));
 		} 
 		
 		// (op term)*
 		while (true) {
 			// 'op'
-			if (expect(new String[]{"+", "-", "*", "/", "&", "|", "<", ">", "="}, new TokenType[]{TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol}, false)) {
-				writeLine("<symbol> , </symbol>");
+			if (expect(new String[]{"+", "-", "*", "/", "&amp", "|", "&lt;", "&gt;", "="}, new TokenType[]{TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol}, false)) {
+				writeLine(String.format("<symbol> %s </symbol>", previousToken));
 			} else {
 				usePreviousLine = true;
 				break;
@@ -613,37 +623,45 @@ class CompilationEngine {
 			spaceCount++;
 		}
 
-		writeLine("<expression>");
+		writeLine("<term>");
 		spaceCount++;
 
 		boolean validTerm = false;
+		boolean doNotUsePreviousLine = false;
 		// integerConstant 
 		// tokenType is integerConstant
 		if (previousTokenType.equals(TokenType.integerConstant.name())) {
-			writeLine(String.format("<integerConstant> &s </integerConstant>", previousToken));
+			writeLine(String.format("<integerConstant> %s </integerConstant>", previousToken));
 			validTerm = true;
+			doNotUsePreviousLine = true;
+		} else {
+			usePreviousLine = true;
 		}
-		usePreviousLine = true;
 
 		// stringConstant
 		// tokenType is stringConstant
 		if (!validTerm && previousTokenType.equals(TokenType.stringConstant.name())) {
-			writeLine(String.format("<stringConstant> &s </stringConstant>", previousToken));
+			writeLine(String.format("<stringConstant> %s </stringConstant>", previousToken));
 			validTerm = true;
+			doNotUsePreviousLine = true;
+		} else {
+			usePreviousLine = true;
 		}
-		usePreviousLine = true;
 
 		// keywordConstant 
 		// tokenType is keyword of token 'true'|'false'|'null'|'this'
 		if (!validTerm && expect(new String[]{"true", "false", "null", "this"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.keyword}, false)) {
-			writeLine(String.format("<keyword> &s </keyword>", previousToken)); // WARNING: Maybe supposed to be keywordConstant?
+			writeLine(String.format("<keyword> %s </keyword>", previousToken)); // WARNING: Maybe supposed to be keywordConstant?
 			validTerm = true;
+			doNotUsePreviousLine = true;
+		} else {
+			usePreviousLine = true;
 		}
-		usePreviousLine = true;
 
 		// '('expression')' 
 		// tokenType is symbol of token '('
 		if (!validTerm && expect(new String[]{"("}, new TokenType[]{TokenType.keyword}, false)) {
+			System.out.println("expression correct");
 			writeLine(String.format("<symbol> ( </symbol>")); 
 			validTerm = true;
 
@@ -655,8 +673,9 @@ class CompilationEngine {
 				writeLine("<symbol> ) </symbol>");
 			}
 
+		} else {
+			usePreviousLine = true;
 		}
-		usePreviousLine = true;
 
 		// (unaryOp term) 
 		// tokenType is symbol of token '-'|'~'
@@ -666,11 +685,14 @@ class CompilationEngine {
 
 			// term
 			compileTerm(false, true);
+		} else {
+			usePreviousLine = true;
 		}
-		usePreviousLine = true;
 
 		if (!validTerm && expect(new String[]{"identifier"}, new TokenType[]{TokenType.identifier}, false)) {
 			String varToken = previousToken;
+			validTerm = true;
+
 			// varName|subroutineName
 			writeLine(String.format("<identifier> %s </identifier>", varToken));
 
@@ -691,7 +713,7 @@ class CompilationEngine {
 				}
 
 			
-			// subroutine all: subroutineName '(' expressionList ')' | ( className | varName)' '.' subroutineName '(' expressionList ')'
+			// subroutineCall: subroutineName '(' expressionList ')' | ( className | varName)' '.' subroutineName '(' expressionList ')'
 			// tokenType of identifier followed by symbol of token '(' or .
 			} else if ((usePreviousLine = true) && expect(new String[]{"(", "."}, new TokenType[]{TokenType.symbol, TokenType.symbol}, false)) {
 				// then check if '.' or not
@@ -712,10 +734,10 @@ class CompilationEngine {
 				if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {
 					writeLine("<symbol> ( </symbol>");
 				}
-
+				
 				// expressionList
 				compileExpressionList();
-				
+
 				// ')'
 				if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
 					writeLine("<symbol> ) </symbol>");
@@ -723,14 +745,23 @@ class CompilationEngine {
 
 			// varName  (already written)
 			// tokenType of identifier followed not by a symbol of token '['
+			} else {
+				usePreviousLine = true;
 			}
+
+		} else {
+			usePreviousLine = true;
 		}
-		usePreviousLine = true;
 
 		if (validTerm) {
 			spaceCount--;
-			writeLine("</expression>");
+			writeLine("</term>");
 		}
+
+		if (doNotUsePreviousLine) {
+			usePreviousLine = false;
+		}
+
 		return validTerm;
 	}
 	
@@ -741,16 +772,19 @@ class CompilationEngine {
 	
 		// (expression (',' expression)* )?
 		// expression 
-		if (compileTerm(false, false)) {
+		if (compileExpression(false)) {
 			// (',' expression)*
+
 			while (expect(new String[]{","}, new TokenType[]{TokenType.symbol}, false)) {
 				writeLine("<symbol> , </symbol>");
 
 				compileExpression(true);
 			}
+			usePreviousLine = true;
+		} else {
+			usePreviousLine = true;
 		}
-		usePreviousLine = true;
-	
+
 		spaceCount--;
 		writeLine("</expressionList>");
 	}
@@ -793,7 +827,7 @@ class CompilationEngine {
 								Arrays.toString(expectedTokens), lineNumber));
 		}
 
-		System.out.println(Arrays.toString(splitStrings));
+		// System.out.println(Arrays.toString(splitStrings));
 		
 		// Check that the two elements are of the same type
 		if (!splitStrings[0].equals(splitStrings[2])) {
@@ -884,23 +918,24 @@ class CompilationEngine {
 			startOfToken = lineIter;
 		}
 
-		// Check for closing ending space or end of line
-		while (lineIter != lineEnd && line.charAt(lineIter) != ' ') {lineIter++;}
+		// Check for next open bracket or end of line
+		while (lineIter != lineEnd && line.charAt(lineIter) != '<') {lineIter++;}
 		// Check if end of line
 		if (lineIter == lineEnd) {
-			throw new Exception("ERROR: Compilation Engine expected longer line in format '<e> t </e>'.");
-		// If not end of line, it means that the current lineIter is pointing at the closing space.
+			throw new Exception("ERROR: Compilation Engine expected open angle bracket after token, in the line.");
+		
+		// If lineIter is currently pointing at the open angle bracket then the previous one should be a space.
+		} else if (line.charAt(lineIter - 1) != ' ') {
+			throw new Exception("ERROR: Compilation Engine expected space before open angle bracket after token, in the line.");
 		} else {
-			endOfToken = lineIter++;
+			endOfToken = lineIter - 1;
 		}
 
-		// Check for opening angle bracket and then slash after token.
-		if (line.charAt(lineIter++) != '<') {
-			throw new Exception("ERROR: Compilation Engine expected open bracket after token, in the line.");
-		} else if (line.charAt(lineIter++) != '/') {
+		// Check for slash and then slash after token.
+		if (line.charAt(++lineIter) != '/') {
 			throw new Exception("ERROR: Compilation Engine expected slash after open bracket, in the line.");
 		} else {
-			startOfElement2 = lineIter;
+			startOfElement2 = ++lineIter;
 		}
 
 		// Check for closing > or end of line
