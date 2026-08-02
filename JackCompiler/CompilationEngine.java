@@ -7,9 +7,8 @@ import java.io.BufferedReader;
 
 class CompilationEngine {
 	private BufferedReader reader;
-	private BufferedWriter writer;
+	private VMWriter writer;
 	private int lineNumber = 0;
-	private int spaceCount = 0;
 	private SymbolTable symbolTable;
 
 	private boolean usePreviousLine = false;
@@ -35,7 +34,7 @@ class CompilationEngine {
 		}
 
 		try {
-			writer = new BufferedWriter(new FileWriter(write));
+			writer = new VMWriter(write);
 		} catch (Exception e) {
 			System.err.println("ERROR: " + e);
 			throw new Exception("ERROR: CompilationEngine cannot write to file: " + read);
@@ -61,37 +60,26 @@ class CompilationEngine {
 
 		writer.close();
 	}
-
-	void writeLine(String line) throws Exception {
-		for (int i = 0; i < spaceCount; i++) {
-			writer.write("  ");
-			// System.out.printf("  ");
-		}
-
-		// System.err.println(line);
-		writer.write(line); writer.newLine();
-		writer.flush();
-	}
 	
 	// Compiles a complete class.
 	// class: 'class' className '{' classVarDec* subroutineDec* '}'
 	void compileClass() throws Exception {
-		writeLine("<class>");
-		spaceCount++;
+		writer.writeLine("<class>");
+		writer.spaceCount++;
 
 		// 'class'
 		if (expect(new String[]{"class"}, new TokenType[]{TokenType.keyword}, true)) {
-			writeLine("<keyword> class </keyword>");
+			writer.writeLine("<keyword> class </keyword>");
 		}
 		
 		// className 
 		if (expect(new String[]{"className"}, new TokenType[]{TokenType.identifier}, true)) {
-			writeLine(String.format("<className> %s </className>", previousToken));
+			writer.writeLine(String.format("<className> %s </className>", previousToken));
 		} 
 
 		// '{' 
 		if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> { </symbol>");
+			writer.writeLine("<symbol> { </symbol>");
 		}
 
 		// classVarDec* 
@@ -102,11 +90,11 @@ class CompilationEngine {
 
 		// '}'
 		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> } </symbol>");
+			writer.writeLine("<symbol> } </symbol>");
 		}
 
-		spaceCount--;
-		writeLine("</class>");
+		writer.spaceCount--;
+		writer.writeLine("</class>");
 	}
 	
 	// Compiles a static variable declaration, of a field declaration.
@@ -120,9 +108,9 @@ class CompilationEngine {
 			usePreviousLine = true;
 			return false;
 		} else {
-			writeLine("<classVarDec>");
-			spaceCount++;
-			writeLine(String.format("<keyword> %s </keyword>", previousToken));
+			writer.writeLine("<classVarDec>");
+			writer.spaceCount++;
+			writer.writeLine(String.format("<keyword> %s </keyword>", previousToken));
 		}
 		kind = previousToken.toUpperCase(); // Store kind of variable so it can later be added to the SymbolTable.
 
@@ -136,7 +124,7 @@ class CompilationEngine {
 				tokenTypeName = "className";
 			}
 
-			writeLine(String.format("<%s> %s </%s>", tokenTypeName, previousToken, tokenTypeName));
+			writer.writeLine(String.format("<%s> %s </%s>", tokenTypeName, previousToken, tokenTypeName));
 		}
 		type = previousToken;
 		
@@ -145,14 +133,14 @@ class CompilationEngine {
 		if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
 			symbolTable.define(previousToken, type, SymbolKind.valueOf(kind));
 
-			writeLine(String.format("<%s> %s </%s> <!--Declaration. Index: %d -->", kind, previousToken, kind, symbolTable.indexOf(previousToken)));
+			writer.writeLine(String.format("<%s> %s </%s> <!--Declaration. Index: %d -->", kind, previousToken, kind, symbolTable.indexOf(previousToken)));
 		} 
 
 		// (',' varName)* 
 		while (true) {
 			// ','
 			if (expect(new String[]{","}, new TokenType[]{TokenType.symbol}, false)) {
-				writeLine("<symbol> , </symbol>");
+				writer.writeLine("<symbol> , </symbol>");
 			} else {
 				usePreviousLine = true;
 				break;
@@ -163,17 +151,17 @@ class CompilationEngine {
 				// varName will have the same type and kind as the first varName initialised in the loop.
 				symbolTable.define(previousToken, type, SymbolKind.valueOf(kind));
 				
-				writeLine(String.format("<%s> %s </%s> <!--Declaration. Index: %d -->", kind, previousToken, kind, symbolTable.indexOf(previousToken)));
+				writer.writeLine(String.format("<%s> %s </%s> <!--Declaration. Index: %d -->", kind, previousToken, kind, symbolTable.indexOf(previousToken)));
 			}
 		} 
 
 		// ';'
 		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> ; </symbol>");
+			writer.writeLine("<symbol> ; </symbol>");
 		}
 
-		spaceCount--;
-		writeLine("</classVarDec>");
+		writer.spaceCount--;
+		writer.writeLine("</classVarDec>");
 		return true;
 	}
 	
@@ -186,9 +174,9 @@ class CompilationEngine {
 			return false;
 		} else {
 			symbolTable.startSubroutine(); // Clears subroutine symbol table, ready for the next subroutine.
-			writeLine("<subroutineDec>");
-			spaceCount++;
-			writeLine(String.format("<keyword> %s </keyword>", previousToken));
+			writer.writeLine("<subroutineDec>");
+			writer.spaceCount++;
+			writer.writeLine(String.format("<keyword> %s </keyword>", previousToken));
 		}
 		
 		// ('void'|type) 
@@ -199,18 +187,18 @@ class CompilationEngine {
 				tokenTypeName = "className";
 			}
 
-			writeLine(String.format("<%s> %s </%s>", tokenTypeName, previousToken, tokenTypeName));
+			writer.writeLine(String.format("<%s> %s </%s>", tokenTypeName, previousToken, tokenTypeName));
 		}
 		
 
 		// subroutineName 
 		if (expect(new String[]{"subroutineName"}, new TokenType[]{TokenType.identifier}, true)) {
-			writeLine(String.format("<subroutineName> %s </subroutineName>", previousToken));
+			writer.writeLine(String.format("<subroutineName> %s </subroutineName>", previousToken));
 		} 
 
 		// '(' 
 		if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> ( </symbol>");
+			writer.writeLine("<symbol> ( </symbol>");
 		}
 
 		// parameterList 
@@ -218,13 +206,13 @@ class CompilationEngine {
 
 		// ')' 
 		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> ) </symbol>");
+			writer.writeLine("<symbol> ) </symbol>");
 		}
 
 		compileSubroutineBody();
 
-		spaceCount--;
-		writeLine("</subroutineDec>");
+		writer.spaceCount--;
+		writer.writeLine("</subroutineDec>");
 
 		return true;
 	}
@@ -232,8 +220,8 @@ class CompilationEngine {
 	// Compiles a (possible empty) parameter list.
 	// Does not handle the enclosing '()'.
 	private void compileParameterList() throws Exception {
-		writeLine("<parameterList>");
-		spaceCount++;
+		writer.writeLine("<parameterList>");
+		writer.spaceCount++;
 
 		// ( (type varName) (',' type varName)*)?
 		// type
@@ -242,20 +230,20 @@ class CompilationEngine {
 			if (previousTokenType == TokenType.identifier.name()) {
 				firstType = "className";
 			}
-			writeLine(String.format("<%s> %s </%s>", firstType, previousToken, firstType));
+			writer.writeLine(String.format("<%s> %s </%s>", firstType, previousToken, firstType));
 		
 			// varName
 			if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
 				symbolTable.define(previousToken, firstType, SymbolKind.ARG);
 
-				writeLine(String.format("<%s> %s </%s> <!--Declaration+Initialisation. Index: %d -->", SymbolKind.ARG, previousToken, SymbolKind.ARG, symbolTable.indexOf(previousToken)));
+				writer.writeLine(String.format("<%s> %s </%s> <!--Declaration+Initialisation. Index: %d -->", SymbolKind.ARG, previousToken, SymbolKind.ARG, symbolTable.indexOf(previousToken)));
 			} 
 
 			// (',' type varName)*	
 			while (true) {
 				// ','
 				if (expect(new String[]{","}, new TokenType[]{TokenType.symbol}, false)) {
-					writeLine("<symbol> , </symbol>");
+					writer.writeLine("<symbol> , </symbol>");
 				} else {
 					usePreviousLine = true;
 					break;
@@ -269,7 +257,7 @@ class CompilationEngine {
 						secondTypes = "className";
 					}
 
-					writeLine(String.format("<%s> %s </%s>", secondTypes, previousToken, secondTypes));
+					writer.writeLine(String.format("<%s> %s </%s>", secondTypes, previousToken, secondTypes));
 				} 
 				secondTypes = previousTokenType; // Redundant, but shuts the Java compiler up.
 
@@ -277,47 +265,47 @@ class CompilationEngine {
 				if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
 					symbolTable.define(previousToken, secondTypes, SymbolKind.ARG);
 
-					writeLine(String.format("<%s> %s </%s> <!--Declaration+Initialisation. Index: %d -->", SymbolKind.ARG, previousToken, SymbolKind.ARG, symbolTable.indexOf(previousToken)));
+					writer.writeLine(String.format("<%s> %s </%s> <!--Declaration+Initialisation. Index: %d -->", SymbolKind.ARG, previousToken, SymbolKind.ARG, symbolTable.indexOf(previousToken)));
 				} 
 			} 
 		} else {
 			usePreviousLine = true;
 		}
 
-		spaceCount--;
-		writeLine("</parameterList>");
+		writer.spaceCount--;
+		writer.writeLine("</parameterList>");
 	}
 	
 	// Compiles a subroutine's body.
 	private void compileSubroutineBody() throws Exception {
-		writeLine("<subroutineBody>");
-		spaceCount++;
+		writer.writeLine("<subroutineBody>");
+		writer.spaceCount++;
 
 		// '{' 
 		if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> { </symbol>");
+			writer.writeLine("<symbol> { </symbol>");
 		}
 
 		// varDec* 
 		while(compileVarDec()) {}
 
 		// statements
-		writeLine("<statements>");
-		spaceCount++;
+		writer.writeLine("<statements>");
+		writer.spaceCount++;
 		compileStatements();
-		spaceCount--;
-		writeLine("</statements>");
+		writer.spaceCount--;
+		writer.writeLine("</statements>");
 		// System.out.println("FAILED: " + previousLine + " " + usePreviousLine);
 
 		usePreviousLine = true;
 		
 		// '}'
 		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> } </symbol>");
+			writer.writeLine("<symbol> } </symbol>");
 		}
 
-		spaceCount--;
-		writeLine("</subroutineBody>");
+		writer.spaceCount--;
+		writer.writeLine("</subroutineBody>");
 	}
 	
 	// Compiles a var declaration.
@@ -329,9 +317,9 @@ class CompilationEngine {
 			usePreviousLine = true;
 			return false;
 		} else {
-			writeLine("<varDec>");
-			spaceCount++;
-			writeLine(String.format("<keyword> %s </keyword>", previousToken));
+			writer.writeLine("<varDec>");
+			writer.spaceCount++;
+			writer.writeLine(String.format("<keyword> %s </keyword>", previousToken));
 		}
 
 		// type 
@@ -342,7 +330,7 @@ class CompilationEngine {
 				tokenTypeName = "className";
 			}
 			
-			writeLine(String.format("<%s> %s </%s>", tokenTypeName, previousToken, tokenTypeName));
+			writer.writeLine(String.format("<%s> %s </%s>", tokenTypeName, previousToken, tokenTypeName));
 		}
 		type = previousToken;
 
@@ -350,14 +338,14 @@ class CompilationEngine {
 		if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
 			symbolTable.define(previousToken, type, SymbolKind.VAR);
 
-			writeLine(String.format("<%s> %s </%s> <!--Declaration. Index: %d -->", SymbolKind.VAR, previousToken, SymbolKind.VAR, symbolTable.indexOf(previousToken)));
+			writer.writeLine(String.format("<%s> %s </%s> <!--Declaration. Index: %d -->", SymbolKind.VAR, previousToken, SymbolKind.VAR, symbolTable.indexOf(previousToken)));
 		}
 
 		// (',' varName)* 
 		while (true) {
 			// ','
 			if (expect(new String[]{","}, new TokenType[]{TokenType.symbol}, false)) {
-				writeLine("<symbol> , </symbol>");
+				writer.writeLine("<symbol> , </symbol>");
 			} else {
 				usePreviousLine = true;
 				break;
@@ -367,17 +355,17 @@ class CompilationEngine {
 			if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
 				symbolTable.define(previousToken, type, SymbolKind.VAR);
 
-				writeLine(String.format("<%s> %s </%s> <!--Declaration. Index: %d -->", SymbolKind.VAR, previousToken, SymbolKind.VAR, symbolTable.indexOf(previousToken)));
+				writer.writeLine(String.format("<%s> %s </%s> <!--Declaration. Index: %d -->", SymbolKind.VAR, previousToken, SymbolKind.VAR, symbolTable.indexOf(previousToken)));
 			}
 		} 
 
 		// ';'
 		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> ; </symbol>");
+			writer.writeLine("<symbol> ; </symbol>");
 		}
 
-		spaceCount--;
-		writeLine("</varDec>");
+		writer.spaceCount--;
+		writer.writeLine("</varDec>");
 		return true;
 	}
 	
@@ -396,37 +384,37 @@ class CompilationEngine {
 
 			switch(previousToken){
 				case "let":
-					writeLine("<letStatement>");
-					spaceCount++;
-					writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
+					writer.writeLine("<letStatement>");
+					writer.spaceCount++;
+					writer.writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
 					compileLet();
 					break;
 
 				case "if":
-					writeLine("<ifStatement>");
-					spaceCount++;
-					writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
+					writer.writeLine("<ifStatement>");
+					writer.spaceCount++;
+					writer.writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
 					compileIfStatement();
 					break;
 
 				case "while":
-					writeLine("<whileStatement>");
-					spaceCount++;
-					writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
+					writer.writeLine("<whileStatement>");
+					writer.spaceCount++;
+					writer.writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
 					compileWhileStatement();
 					break;
 
 				case "do":
-					writeLine("<doStatement>");
-					spaceCount++;
-					writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
+					writer.writeLine("<doStatement>");
+					writer.spaceCount++;
+					writer.writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
 					compileDo();
 					break;
 
 				case "return":
-					writeLine("<returnStatement>");
-					spaceCount++;
-					writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
+					writer.writeLine("<returnStatement>");
+					writer.spaceCount++;
+					writer.writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
 					compileReturn();
 					break;
 
@@ -444,21 +432,21 @@ class CompilationEngine {
 	private void compileLet() throws Exception {
 		// varName 
 		if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
-			writeLine(String.format("<%s> %s </%s> <!--Initialisation. Index: %d -->", 
+			writer.writeLine(String.format("<%s> %s </%s> <!--Initialisation. Index: %d -->", 
 					  symbolTable.kindOf(previousToken), previousToken, symbolTable.kindOf(previousToken), symbolTable.indexOf(previousToken)));
 		}
 
 		// ('['expression']')? 
 		// '['
 		if (expect(new String[]{"["}, new TokenType[]{TokenType.symbol}, false)) {
-			writeLine("<symbol> [ </symbol>");
+			writer.writeLine("<symbol> [ </symbol>");
 
 			// expression
 			compileExpression(true);
 
 			// ']'
 			if (expect(new String[]{"]"}, new TokenType[]{TokenType.symbol}, true)) {
-				writeLine("<symbol> ] </symbol>");
+				writer.writeLine("<symbol> ] </symbol>");
 			}
 		} else {
 			usePreviousLine = true;
@@ -466,7 +454,7 @@ class CompilationEngine {
 
 		// '=' 
 		if (expect(new String[]{"="}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> = </symbol>");
+			writer.writeLine("<symbol> = </symbol>");
 		}
 
 		// expression
@@ -474,11 +462,11 @@ class CompilationEngine {
 
 		// ';'
 		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> ; </symbol>");
+			writer.writeLine("<symbol> ; </symbol>");
 		}
 
-		spaceCount--;
-		writeLine("</letStatement>");
+		writer.spaceCount--;
+		writer.writeLine("</letStatement>");
 	}
 	
 	// Compiles an if statment, possibly with a trailing else clause.
@@ -486,7 +474,7 @@ class CompilationEngine {
 		// code for compiling an if statement
 		// '('
 		if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> ( </symbol>");
+			writer.writeLine("<symbol> ( </symbol>");
 		}
 
 		// expression 
@@ -494,65 +482,65 @@ class CompilationEngine {
 
 		// ')' 
 		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> ) </symbol>");
+			writer.writeLine("<symbol> ) </symbol>");
 		}
 
 		// '{'
 		if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> { </symbol>");
+			writer.writeLine("<symbol> { </symbol>");
 		}
 
 		// statements
-		writeLine("<statements>");
-		spaceCount++;
+		writer.writeLine("<statements>");
+		writer.spaceCount++;
 		compileStatements();
-		spaceCount--;
-		writeLine("</statements>");
+		writer.spaceCount--;
+		writer.writeLine("</statements>");
 
 		usePreviousLine = true;
 
 		// '}' 
 		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> } </symbol>");
+			writer.writeLine("<symbol> } </symbol>");
 		}
 
 		// ('else' '{' statements '}')?
 		// 'else'
 		if (expect(new String[]{"else"}, new TokenType[]{TokenType.keyword}, false)) {
-			writeLine("<keyword> else </keyword>");
+			writer.writeLine("<keyword> else </keyword>");
 
 			// '{' 
 			if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {
-				writeLine("<symbol> { </symbol>");
+				writer.writeLine("<symbol> { </symbol>");
 			}
 
 			// statements
-			writeLine("<statements>");
-			spaceCount++;
+			writer.writeLine("<statements>");
+			writer.spaceCount++;
 			compileStatements();
-			spaceCount--;
-			writeLine("</statements>");
+			writer.spaceCount--;
+			writer.writeLine("</statements>");
 
 			usePreviousLine = true;
 
 			// '}'
 			if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
-				writeLine("<symbol> } </symbol>");
+				writer.writeLine("<symbol> } </symbol>");
 			}
 
 		} else {
 			usePreviousLine = true;
 		}
 
-		spaceCount--;
-		writeLine("</ifStatement>");
+		writer.spaceCount--;
+		writer.writeLine("</ifStatement>");
 	}
 	
 	// Compiles a while statement.
 	private void compileWhileStatement() throws Exception {
 		// '('
 		if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> ( </symbol>");
+			writer.writeLine("<symbol> ( </symbol>");
 		}
 
 		// expression
@@ -560,30 +548,30 @@ class CompilationEngine {
 
 		// ')' 
 		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> ) </symbol>");
+			writer.writeLine("<symbol> ) </symbol>");
 		}
 
 		// '{'
 		if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> { </symbol>");
+			writer.writeLine("<symbol> { </symbol>");
 		}
 
 		// statements
-		writeLine("<statements>");
-		spaceCount++;
+		writer.writeLine("<statements>");
+		writer.spaceCount++;
 		compileStatements();
-		spaceCount--;
-		writeLine("</statements>");
+		writer.spaceCount--;
+		writer.writeLine("</statements>");
 
 		usePreviousLine = true;
 
 		// '}'
 		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> } </symbol>");
+			writer.writeLine("<symbol> } </symbol>");
 		}
 
-		spaceCount--;
-		writeLine("</whileStatement>");
+		writer.spaceCount--;
+		writer.writeLine("</whileStatement>");
 	}
 	
 	// Compiles a do statement.
@@ -594,21 +582,21 @@ class CompilationEngine {
 			// Need to figure out if it's a variable.
 			if (symbolTable.exists(previousToken)) {
 				// Token is a variable.
-				writeLine(String.format("<%s> %s </%s> <!--Usage. Type: %s, Index: %d -->", 
+				writer.writeLine(String.format("<%s> %s </%s> <!--Usage. Type: %s, Index: %d -->", 
 						  symbolTable.kindOf(previousToken), previousToken, symbolTable.kindOf(previousToken), symbolTable.typeOf(previousToken), symbolTable.indexOf(previousToken)));
 			} else {
-				writeLine(String.format("<classOrSubroutineName> %s </classOrSubroutineName>", previousToken));
+				writer.writeLine(String.format("<classOrSubroutineName> %s </classOrSubroutineName>", previousToken));
 			}
 		}
 		// then check if '.' or not
 		if (expect(new String[]{"."}, new TokenType[]{TokenType.symbol}, false)) {
 			// '.' subroutineName
 			// '.'
-			writeLine("<symbol> . </symbol>");
+			writer.writeLine("<symbol> . </symbol>");
 
 			// subroutineName
 			if (expect(new String[]{"subroutineName"}, new TokenType[]{TokenType.identifier}, true)) {
-				writeLine(String.format("<subroutineName> %s </subroutineName>", previousToken));
+				writer.writeLine(String.format("<subroutineName> %s </subroutineName>", previousToken));
 			}
 		} else {
 			usePreviousLine = true;
@@ -616,7 +604,7 @@ class CompilationEngine {
 		// '(' expressionList ')'
 		// '('
 		if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> ( </symbol>");
+			writer.writeLine("<symbol> ( </symbol>");
 		}
 
 		// expressionList
@@ -624,16 +612,16 @@ class CompilationEngine {
 
 		// ')'
 		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> ) </symbol>");
+			writer.writeLine("<symbol> ) </symbol>");
 		}
 		
 		// ';'
 		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> ; </symbol>");
+			writer.writeLine("<symbol> ; </symbol>");
 		}
 
-		spaceCount--;
-		writeLine("</doStatement>");
+		writer.spaceCount--;
+		writer.writeLine("</doStatement>");
 	}
 	
 	// Compiles a return statement.
@@ -643,11 +631,11 @@ class CompilationEngine {
 
 		// ';'
 		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
-			writeLine("<symbol> ; </symbol>");
+			writer.writeLine("<symbol> ; </symbol>");
 		}
 
-		spaceCount--;
-		writeLine("</returnStatement>");
+		writer.spaceCount--;
+		writer.writeLine("</returnStatement>");
 	}
 	
 	// Compiles an expression.
@@ -662,7 +650,7 @@ class CompilationEngine {
 		while (true) {
 			// 'op'
 			if (expect(new String[]{"+", "-", "*", "/", "&amp;", "|", "&lt;", "&gt;", "="}, new TokenType[]{TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol}, false)) {
-				writeLine(String.format("<symbol> %s </symbol>", previousToken));
+				writer.writeLine(String.format("<symbol> %s </symbol>", previousToken));
 			} else {
 				usePreviousLine = true;
 				break;
@@ -673,8 +661,8 @@ class CompilationEngine {
 		} 
 
 		if (atLeastOneTerm) {
-			spaceCount--;
-			writeLine("</expression>");	
+			writer.spaceCount--;
+			writer.writeLine("</expression>");	
 			return true;
 		} else {
 			return false;
@@ -697,19 +685,19 @@ class CompilationEngine {
 		usePreviousLine = true;
 
 		if (frontOfExpression) {
-			writeLine("<expression>");
-			spaceCount++;
+			writer.writeLine("<expression>");
+			writer.spaceCount++;
 		}
 
-		writeLine("<term>");
-		spaceCount++;
+		writer.writeLine("<term>");
+		writer.spaceCount++;
 
 		boolean validTerm = false;
 		boolean doNotUsePreviousLine = false;
 		// integerConstant 
 		// tokenType is integerConstant
 		if (previousTokenType.equals(TokenType.integerConstant.name())) {
-			writeLine(String.format("<integerConstant> %s </integerConstant>", previousToken));
+			writer.writeLine(String.format("<integerConstant> %s </integerConstant>", previousToken));
 			validTerm = true;
 			doNotUsePreviousLine = true;
 		} else {
@@ -719,7 +707,7 @@ class CompilationEngine {
 		// stringConstant
 		// tokenType is stringConstant
 		if (!validTerm && previousTokenType.equals(TokenType.stringConstant.name())) {
-			writeLine(String.format("<stringConstant> %s </stringConstant>", previousToken));
+			writer.writeLine(String.format("<stringConstant> %s </stringConstant>", previousToken));
 			validTerm = true;
 			doNotUsePreviousLine = true;
 		} else {
@@ -729,7 +717,7 @@ class CompilationEngine {
 		// keywordConstant 
 		// tokenType is keyword of token 'true'|'false'|'null'|'this'
 		if (!validTerm && expect(new String[]{"true", "false", "null", "this"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.keyword}, false)) {
-			writeLine(String.format("<keyword> %s </keyword>", previousToken)); // WARNING: Maybe supposed to be keywordConstant?
+			writer.writeLine(String.format("<keyword> %s </keyword>", previousToken)); // WARNING: Maybe supposed to be keywordConstant?
 			validTerm = true;
 			doNotUsePreviousLine = true;
 		} else {
@@ -739,7 +727,7 @@ class CompilationEngine {
 		// '('expression')' 
 		// tokenType is symbol of token '('
 		if (!validTerm && expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, false)) {
-			writeLine(String.format("<symbol> ( </symbol>")); 
+			writer.writeLine(String.format("<symbol> ( </symbol>")); 
 			validTerm = true;
 
 			// expression
@@ -747,7 +735,7 @@ class CompilationEngine {
 
 			// ')' 
 			if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
-				writeLine("<symbol> ) </symbol>");
+				writer.writeLine("<symbol> ) </symbol>");
 			}
 
 			doNotUsePreviousLine = true;
@@ -759,7 +747,7 @@ class CompilationEngine {
 		// (unaryOp term) 
 		// tokenType is symbol of token '-'|'~'
 		if (!validTerm && expect(new String[]{"-", "~"}, new TokenType[]{TokenType.symbol, TokenType.symbol}, false)) {
-			writeLine(String.format("<symbol> %s </symbol>", previousToken));
+			writer.writeLine(String.format("<symbol> %s </symbol>", previousToken));
 			validTerm = true;
 
 			// term
@@ -776,23 +764,23 @@ class CompilationEngine {
 			// Need to figure out if it's a variable.
 			if (symbolTable.exists(varToken)) {
 				// Token is a variable.
-				writeLine(String.format("<%s> %s </%s> <!--Usage. Type: %s, Index: %d -->", 
+				writer.writeLine(String.format("<%s> %s </%s> <!--Usage. Type: %s, Index: %d -->", 
 						  symbolTable.kindOf(varToken), varToken, symbolTable.kindOf(varToken), symbolTable.typeOf(varToken), symbolTable.indexOf(varToken)));
 			} else {
-				writeLine(String.format("<classOrSubroutineName> %s </classOrSubroutineName>", varToken));
+				writer.writeLine(String.format("<classOrSubroutineName> %s </classOrSubroutineName>", varToken));
 			}
 
 			// varName'['expression']' 
 			// tokenType of identifier followed by a symbol of token '['
 			if (expect(new String[]{"["}, new TokenType[]{TokenType.symbol}, false)) { 
-				writeLine("<symbol> [ </symbol>");
+				writer.writeLine("<symbol> [ </symbol>");
 
 				// expression
 				compileExpression(true);
 
 				// ']' 
 				if (expect(new String[]{"]"}, new TokenType[]{TokenType.symbol}, true)) {
-					writeLine("<symbol> ] </symbol>");
+					writer.writeLine("<symbol> ] </symbol>");
 				}
 
 			
@@ -803,11 +791,11 @@ class CompilationEngine {
 				if (previousToken.equals(".")) {
 					// '.' subroutineName
 					// '.'
-					writeLine("<symbol> . </symbol>");
+					writer.writeLine("<symbol> . </symbol>");
 
 					// subroutineName
 					if (expect(new String[]{"subroutineName"}, new TokenType[]{TokenType.identifier}, true)) {
-						writeLine(String.format("<identifier> %s </identifier>", previousToken));
+						writer.writeLine(String.format("<identifier> %s </identifier>", previousToken));
 					}
 				} else {
 					usePreviousLine = true;
@@ -815,7 +803,7 @@ class CompilationEngine {
 				// '(' expressionList ')'
 				// '('
 				if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {
-					writeLine("<symbol> ( </symbol>");
+					writer.writeLine("<symbol> ( </symbol>");
 				}
 				
 				// expressionList
@@ -823,7 +811,7 @@ class CompilationEngine {
 
 				// ')'
 				if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
-					writeLine("<symbol> ) </symbol>");
+					writer.writeLine("<symbol> ) </symbol>");
 				}
 
 			// varName  (already written)
@@ -835,8 +823,8 @@ class CompilationEngine {
 		}
 
 		if (validTerm) {
-			spaceCount--;
-			writeLine("</term>");
+			writer.spaceCount--;
+			writer.writeLine("</term>");
 		}
 
 		if (doNotUsePreviousLine) {
@@ -848,8 +836,8 @@ class CompilationEngine {
 	
 	// Compiles a (possible empty) comma-separated list of expressions.
 	private void compileExpressionList() throws Exception {
-		writeLine("<expressionList>");
-		spaceCount++;
+		writer.writeLine("<expressionList>");
+		writer.spaceCount++;
 	
 		// (expression (',' expression)* )?
 		// expression 
@@ -857,7 +845,7 @@ class CompilationEngine {
 			// (',' expression)*
 
 			while (expect(new String[]{","}, new TokenType[]{TokenType.symbol}, false)) {
-				writeLine("<symbol> , </symbol>");
+				writer.writeLine("<symbol> , </symbol>");
 
 				compileExpression(true);
 			}
@@ -866,8 +854,8 @@ class CompilationEngine {
 			usePreviousLine = true;
 		}
 
-		spaceCount--;
-		writeLine("</expressionList>");
+		writer.spaceCount--;
+		writer.writeLine("</expressionList>");
 	}
 
 	// If not told to use the previous line, then expect reads a new line of the .Txml and stores it in case of later use.
