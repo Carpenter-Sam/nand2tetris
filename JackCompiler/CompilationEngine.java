@@ -10,6 +10,7 @@ class CompilationEngine {
 	private BufferedWriter writer;
 	private int lineNumber = 0;
 	private int spaceCount = 0;
+	private SymbolTable symbolTable;
 
 	private boolean usePreviousLine = false;
 	private String previousToken;
@@ -39,6 +40,8 @@ class CompilationEngine {
 			System.err.println("ERROR: " + e);
 			throw new Exception("ERROR: CompilationEngine cannot write to file: " + read);
 		}
+
+		symbolTable = new SymbolTable();
 
 		// Check if file starts correctly.
 		lineNumber++;
@@ -83,7 +86,7 @@ class CompilationEngine {
 		
 		// className 
 		if (expect(new String[]{"className"}, new TokenType[]{TokenType.identifier}, true)) {
-			writeLine(String.format("<identifier> %s </identifier>", previousToken));
+			writeLine(String.format("<className> %s </className>", previousToken));
 		} 
 
 		// '{' 
@@ -109,6 +112,9 @@ class CompilationEngine {
 	// Compiles a static variable declaration, of a field declaration.
 	// classVarDec: ('static'|'field') type varName (',' varName)* ';'
 	private boolean compileClassVarDec(boolean allowedToFail) throws Exception {
+		String kind;
+		String type;
+
 		// ('static'|'field')
 		if (!expect(new String[]{"static", "field"}, new TokenType[]{TokenType.keyword, TokenType.keyword}, allowedToFail)) {
 			usePreviousLine = true;
@@ -118,18 +124,28 @@ class CompilationEngine {
 			spaceCount++;
 			writeLine(String.format("<keyword> %s </keyword>", previousToken));
 		}
+		kind = previousToken.toUpperCase(); // Store kind of variable so it can later be added to the SymbolTable.
 
 		// type 
 		String[] expectedTokens1 = {"int", "char", "boolean", "className"};
 		TokenType[] expectedTokenTypes1 = {TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.identifier};
 		if (expect(expectedTokens1, expectedTokenTypes1, true)) {
-			writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
+			// Allows for 'className' to be written instead of 'identifier', for more accurate identifiers.
+			String tokenTypeName = previousTokenType;
+			if (previousTokenType == TokenType.identifier.name()) {
+				tokenTypeName = "className";
+			}
+
+			writeLine(String.format("<%s> %s </%s>", tokenTypeName, previousToken, tokenTypeName));
 		}
+		type = previousToken;
 		
 
 		// varName 
 		if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
-			writeLine(String.format("<identifier> %s </identifier>", previousToken));
+			symbolTable.define(previousToken, type, SymbolKind.valueOf(kind));
+
+			writeLine(String.format("<%s> %s </%s> <!--Declaration. Index: %d -->", kind, previousToken, kind, symbolTable.indexOf(previousToken)));
 		} 
 
 		// (',' varName)* 
@@ -144,7 +160,10 @@ class CompilationEngine {
 
 			// varName
 			if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
-				writeLine(String.format("<identifier> %s </identifier>", previousToken));
+				// varName will have the same type and kind as the first varName initialised in the loop.
+				symbolTable.define(previousToken, type, SymbolKind.valueOf(kind));
+				
+				writeLine(String.format("<%s> %s </%s> <!--Declaration. Index: %d -->", kind, previousToken, kind, symbolTable.indexOf(previousToken)));
 			}
 		} 
 
@@ -166,6 +185,7 @@ class CompilationEngine {
 			usePreviousLine = true;
 			return false;
 		} else {
+			symbolTable.startSubroutine(); // Clears subroutine symbol table, ready for the next subroutine.
 			writeLine("<subroutineDec>");
 			spaceCount++;
 			writeLine(String.format("<keyword> %s </keyword>", previousToken));
@@ -173,13 +193,19 @@ class CompilationEngine {
 		
 		// ('void'|type) 
 		if (expect(new String[]{"void", "int", "char", "boolean", "className"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.identifier}, true)) {
-			writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
+			// Allows for 'className' to be written instead of 'identifier', for more accurate identifiers.
+			String tokenTypeName = previousTokenType;
+			if (previousTokenType == TokenType.identifier.name()) {
+				tokenTypeName = "className";
+			}
+
+			writeLine(String.format("<%s> %s </%s>", tokenTypeName, previousToken, tokenTypeName));
 		}
 		
 
 		// subroutineName 
 		if (expect(new String[]{"subroutineName"}, new TokenType[]{TokenType.identifier}, true)) {
-			writeLine(String.format("<identifier> %s </identifier>", previousToken));
+			writeLine(String.format("<subroutineName> %s </subroutineName>", previousToken));
 		} 
 
 		// '(' 
@@ -212,11 +238,17 @@ class CompilationEngine {
 		// ( (type varName) (',' type varName)*)?
 		// type
 		if (expect(new String[]{"int", "char", "boolean", "className"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.identifier}, false)) {
-			writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
+			String firstType = previousTokenType;
+			if (previousTokenType == TokenType.identifier.name()) {
+				firstType = "className";
+			}
+			writeLine(String.format("<%s> %s </%s>", firstType, previousToken, firstType));
 		
 			// varName
 			if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
-				writeLine(String.format("<identifier> %s </identifier>", previousToken));
+				symbolTable.define(previousToken, firstType, SymbolKind.ARG);
+
+				writeLine(String.format("<%s> %s </%s> <!--Declaration+Initialisation. Index: %d -->", SymbolKind.ARG, previousToken, SymbolKind.ARG, symbolTable.indexOf(previousToken)));
 			} 
 
 			// (',' type varName)*	
@@ -229,15 +261,24 @@ class CompilationEngine {
 					break;
 				}
 
+				String secondTypes;
 				// type
 				if (expect(new String[]{"int", "char", "boolean", "className"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.identifier}, true)) {
-					writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
-				}
+					secondTypes = previousTokenType;
+					if (previousTokenType == TokenType.identifier.name()) {
+						secondTypes = "className";
+					}
+
+					writeLine(String.format("<%s> %s </%s>", secondTypes, previousToken, secondTypes));
+				} 
+				secondTypes = previousTokenType; // Redundant, but shuts the Java compiler up.
 
 				// varName
 				if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
-					writeLine(String.format("<identifier> %s </identifier>", previousToken));
-				}
+					symbolTable.define(previousToken, secondTypes, SymbolKind.ARG);
+
+					writeLine(String.format("<%s> %s </%s> <!--Declaration+Initialisation. Index: %d -->", SymbolKind.ARG, previousToken, SymbolKind.ARG, symbolTable.indexOf(previousToken)));
+				} 
 			} 
 		} else {
 			usePreviousLine = true;
@@ -281,6 +322,8 @@ class CompilationEngine {
 	
 	// Compiles a var declaration.
 	private boolean compileVarDec() throws Exception {
+		String type;
+
 		// 'var' 
 		if (!expect(new String[]{"var"}, new TokenType[]{TokenType.keyword}, false)) {
 			usePreviousLine = true;
@@ -293,12 +336,21 @@ class CompilationEngine {
 
 		// type 
 		if (expect(new String[]{"int", "char", "boolean", "className"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.identifier}, true)) {
-			writeLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
+			// Allows for 'className' to be written instead of 'identifier', for more accurate identifiers.
+			String tokenTypeName = previousTokenType;
+			if (previousTokenType == TokenType.identifier.name()) {
+				tokenTypeName = "className";
+			}
+			
+			writeLine(String.format("<%s> %s </%s>", tokenTypeName, previousToken, tokenTypeName));
 		}
+		type = previousToken;
 
 		// varName 
 		if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
-			writeLine(String.format("<identifier> %s </identifier>", previousToken));
+			symbolTable.define(previousToken, type, SymbolKind.VAR);
+
+			writeLine(String.format("<%s> %s </%s> <!--Declaration. Index: %d -->", SymbolKind.VAR, previousToken, SymbolKind.VAR, symbolTable.indexOf(previousToken)));
 		}
 
 		// (',' varName)* 
@@ -313,7 +365,9 @@ class CompilationEngine {
 
 			// varName
 			if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
-				writeLine(String.format("<identifier> %s </identifier>", previousToken));
+				symbolTable.define(previousToken, type, SymbolKind.VAR);
+
+				writeLine(String.format("<%s> %s </%s> <!--Declaration. Index: %d -->", SymbolKind.VAR, previousToken, SymbolKind.VAR, symbolTable.indexOf(previousToken)));
 			}
 		} 
 
@@ -390,7 +444,8 @@ class CompilationEngine {
 	private void compileLet() throws Exception {
 		// varName 
 		if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
-			writeLine(String.format("<identifier> %s </identifier>", previousToken));
+			writeLine(String.format("<%s> %s </%s> <!--Initialisation. Index: %d -->", 
+					  symbolTable.kindOf(previousToken), previousToken, symbolTable.kindOf(previousToken), symbolTable.indexOf(previousToken)));
 		}
 
 		// ('['expression']')? 
@@ -535,8 +590,15 @@ class CompilationEngine {
 	private void compileDo() throws Exception {
 		// subroutineCall: subroutineName '(' expressionList ')' | ( className | varName )' '.' subroutineName '(' expressionList ')'
 		// identifier = subroutineName or ( className | varName )
-		if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
-			writeLine(String.format("<identifier> %s </identifier>", previousToken));
+		if (expect(new String[]{"varOrClassOrSubroutineName"}, new TokenType[]{TokenType.identifier}, true)) {
+			// Need to figure out if it's a variable.
+			if (symbolTable.exists(previousToken)) {
+				// Token is a variable.
+				writeLine(String.format("<%s> %s </%s> <!--Usage. Type: %s, Index: %d -->", 
+						  symbolTable.kindOf(previousToken), previousToken, symbolTable.kindOf(previousToken), symbolTable.typeOf(previousToken), symbolTable.indexOf(previousToken)));
+			} else {
+				writeLine(String.format("<classOrSubroutineName> %s </classOrSubroutineName>", previousToken));
+			}
 		}
 		// then check if '.' or not
 		if (expect(new String[]{"."}, new TokenType[]{TokenType.symbol}, false)) {
@@ -546,7 +608,7 @@ class CompilationEngine {
 
 			// subroutineName
 			if (expect(new String[]{"subroutineName"}, new TokenType[]{TokenType.identifier}, true)) {
-				writeLine(String.format("<identifier> %s </identifier>", previousToken));
+				writeLine(String.format("<subroutineName> %s </subroutineName>", previousToken));
 			}
 		} else {
 			usePreviousLine = true;
@@ -710,8 +772,15 @@ class CompilationEngine {
 			String varToken = previousToken;
 			validTerm = true;
 
-			// varName|subroutineName
-			writeLine(String.format("<identifier> %s </identifier>", varToken));
+			// varName|subroutineName|className
+			// Need to figure out if it's a variable.
+			if (symbolTable.exists(varToken)) {
+				// Token is a variable.
+				writeLine(String.format("<%s> %s </%s> <!--Usage. Type: %s, Index: %d -->", 
+						  symbolTable.kindOf(varToken), varToken, symbolTable.kindOf(varToken), symbolTable.typeOf(varToken), symbolTable.indexOf(varToken)));
+			} else {
+				writeLine(String.format("<classOrSubroutineName> %s </classOrSubroutineName>", varToken));
+			}
 
 			// varName'['expression']' 
 			// tokenType of identifier followed by a symbol of token '['
