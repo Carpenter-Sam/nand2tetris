@@ -74,6 +74,7 @@ class CompilationEngine {
 		
 		// className 
 		if (expect(new String[]{"className"}, new TokenType[]{TokenType.identifier}, true)) {
+			writer.setClassName(previousToken);
 			writer.writeLine(String.format("<className> %s </className>", previousToken));
 		} 
 
