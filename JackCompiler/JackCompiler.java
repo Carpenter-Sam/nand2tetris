@@ -108,7 +108,7 @@ public class JackCompiler {
             try {
                 // Create CompilationEngine, which will run automatically.
                 new CompilationEngine(new File(currentFile.substring(0, currentFile.length() - 5) + ".Txml"), 
-                                                                 new File(currentFile.substring(0, currentFile.length() - 5) + ".xml"));
+                                                                 new File(currentFile.substring(0, currentFile.length() - 5) + ".vm"));
                 
             } catch (Exception e) {
                 System.err.println(e);

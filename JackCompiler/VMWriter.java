@@ -8,12 +8,12 @@ public class VMWriter {
     private String className = "";
     private int index = 0;
 
-    // Creates a new .vm output file.
+    // Creates a new .vm or XML output file.
     public VMWriter(File write) throws Exception {
         writer = new BufferedWriter(new FileWriter(write));
     }
 
-    public void writeLine(String line) throws Exception {
+    public void writeXMLLine(String line) throws Exception {
 		for (int i = 0; i < spaceCount; i++) {
 			writer.write("  ");
 			// System.out.printf("  ");
