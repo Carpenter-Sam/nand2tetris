@@ -144,47 +144,72 @@ class CompilationEngine {
 	private boolean compileSubroutineDec(boolean allowedToFail) throws Exception {
 
 		// ('constructor'|'function'|'method')
+		String functionType = "";
 		if (!expect(new String[]{"constructor", "function", "method"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword}, allowedToFail)) {
 			usePreviousLine = true;
 			return false;
 		} else {
 			symbolTable.startSubroutine(); // Clears subroutine symbol table, ready for the next subroutine.
-			writer.writeXMLLine("<subroutineDec>");
 			writer.spaceCount++;
-			writer.writeXMLLine(String.format("<keyword> %s </keyword>", previousToken));
+			functionType = previousToken;
+			writer.writeXMLLine(String.format("// Start of subroutine."));
 		}
 		
 		// ('void'|type) 
+		String tokenTypeName = "";
 		if (expect(new String[]{"void", "int", "char", "boolean", "className"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.identifier}, true)) {
 			// Allows for 'className' to be written instead of 'identifier', for more accurate identifiers.
-			String tokenTypeName = previousTokenType;
+			tokenTypeName = previousTokenType;
 			if (previousTokenType == TokenType.identifier.name()) {
 				tokenTypeName = "className";
 			}
-
-			writer.writeXMLLine(String.format("<%s> %s </%s>", tokenTypeName, previousToken, tokenTypeName));
 		}
 		
 
 		// subroutineName 
+		String subroutineName = "";
 		if (expect(new String[]{"subroutineName"}, new TokenType[]{TokenType.identifier}, true)) {
-			writer.writeXMLLine(String.format("<subroutineName> %s </subroutineName>", previousToken));
+			previousToken = subroutineName;
 		} 
 
 		// '(' 
-		if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {
-			writer.writeXMLLine("<symbol> ( </symbol>");
-		}
+		if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {}
 
 		// parameterList 
-		compileParameterList();
+		int numOfParameters = compileParameterList(); 
+		// Count number of parameters.
 
 		// ')' 
-		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
-			writer.writeXMLLine("<symbol> ) </symbol>");
+		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {}
+
+		/*
+		Here we need to write a function: className.functionName nLocals
+		If constructor:
+			Works on one argument.
+			Must allocate memory for new object and set base of this to new object's base address.
+			Memory.alloc(size).
+		If method:
+			Due to operating on object, k+1 arguments.	
+		
+			push argument 0
+			pop pointer 0 // THIS = argument 0
+		If function:
+		*/
+		writer.writeFunction(subroutineName, numOfParameters); // 1 parameter due to constructor
+		if (functionType.equals("constructor")) {
+			// Must allocate memory for new object and set base of this to new object's base address.
+			// do Memory.alloc(size) where size = number of field parameters
+		} else if (functionType.equals("method")) {
+			writer.writePush(SegmentType.ARG, 0);
+			writer.writePop(SegmentType.POINTER, 0); // THIS = argument 0
+		} else { // Function
+			
 		}
 
 		compileSubroutineBody();
+
+		// If method is void, then we need to insert a push constant 0 before return.
+		// If constructor, return this. Ensure this is correct and inserted correctly.
 
 		writer.spaceCount--;
 		writer.writeXMLLine("</subroutineDec>");
@@ -194,9 +219,9 @@ class CompilationEngine {
 	
 	// Compiles a (possible empty) parameter list.
 	// Does not handle the enclosing '()'.
-	private void compileParameterList() throws Exception {
-		writer.writeXMLLine("<parameterList>");
+	private int compileParameterList() throws Exception {
 		writer.spaceCount++;
+		int numOfParameters = 0;
 
 		// ( (type varName) (',' type varName)*)?
 		// type
@@ -205,11 +230,11 @@ class CompilationEngine {
 			if (previousTokenType == TokenType.identifier.name()) {
 				firstType = "className";
 			}
-			writer.writeXMLLine(String.format("<%s> %s </%s>", firstType, previousToken, firstType));
 		
 			// varName
 			if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
 				symbolTable.define(previousToken, firstType, SymbolKind.ARG);
+				numOfParameters++;
 
 				writer.writeXMLLine(String.format("<%s> %s </%s> <!--Declaration+Initialisation. Index: %d -->", SymbolKind.ARG, previousToken, SymbolKind.ARG, symbolTable.indexOf(previousToken)));
 			} 
@@ -218,7 +243,6 @@ class CompilationEngine {
 			while (true) {
 				// ','
 				if (expect(new String[]{","}, new TokenType[]{TokenType.symbol}, false)) {
-					writer.writeXMLLine("<symbol> , </symbol>");
 				} else {
 					usePreviousLine = true;
 					break;
@@ -232,13 +256,13 @@ class CompilationEngine {
 						secondTypes = "className";
 					}
 
-					writer.writeXMLLine(String.format("<%s> %s </%s>", secondTypes, previousToken, secondTypes));
 				} 
 				secondTypes = previousTokenType; // Redundant, but shuts the Java compiler up.
 
 				// varName
 				if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
 					symbolTable.define(previousToken, secondTypes, SymbolKind.ARG);
+					numOfParameters++;
 
 					writer.writeXMLLine(String.format("<%s> %s </%s> <!--Declaration+Initialisation. Index: %d -->", SymbolKind.ARG, previousToken, SymbolKind.ARG, symbolTable.indexOf(previousToken)));
 				} 
@@ -248,7 +272,7 @@ class CompilationEngine {
 		}
 
 		writer.spaceCount--;
-		writer.writeXMLLine("</parameterList>");
+		return numOfParameters;
 	}
 	
 	// Compiles a subroutine's body.

@@ -116,4 +116,8 @@ public class SymbolTable {
             return true;
         }
     }
+
+    public int getNumOfFields() {
+        return fieldCount;
+    }
 }
