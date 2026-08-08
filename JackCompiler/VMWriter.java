@@ -43,26 +43,38 @@ public class VMWriter {
         writer.write(String.format("    %s\n", command));
     }
 
-	// - writeLabel (String label): Writes a VM label command.
+	// Writes a VM label command.
     // Each class has a running index for each label so LoopLabel -> ClassName_i where i is an index starting at 0.
-    // public void writeLabel() throws Exception {}
+    public void writeLabel() throws Exception {
+        writer.write(String.format("label %s_%d\n", className, index++));
+    }
 
-	// - writeGoto (String label): Writes a VM goto command.
-    // public void () throws Exception {}
+	// Writes a VM goto command.
+    public void writeGoto(String label) throws Exception {
+        writer.write(String.format("    goto %s\n", label));
+    }
 
-	// - writeIf (String label): Writes a VM if-goto command.
-    // public void () throws Exception {}
+	// Writes a VM if-goto command.
+    public void writeIf(String label) throws Exception {
+        writer.write(String.format("    if-goto %s\n", label));
+    }
 
-	// - writeCall (String name, nArgs int): Writes a VM call command.
+	// Writes a VM call command.
     // name.functionName() -> type.functionName()
-    // public void () throws Exception {}
+    public void writeCall(String name, int nArgs) throws Exception {
+        writer.write(String.format("    call %s %d\n", name, nArgs));
+    }
 
-	// - writeFunction (String name, nLocals int): Writes a VM function command.
+	// Writes a VM function command.
     // functionName -> className.functionName
-    // public void () throws Exception {}
+    public void writeFunction(String name, int nLocals) throws Exception {
+        writer.write(String.format("function %s %d\n", name, nLocals));
+    } 
 
-	// - writeReturn (): Writes a VM return command.
-    // public void () throws Exception {}
+	// Writes a VM return command.
+    public void writeReturn() throws Exception {
+        writer.write(String.format("    return\n"));
+    }
 
 	// Closes the output file.
     public void close() throws Exception {
