@@ -14,6 +14,7 @@ class CompilationEngine {
 	private String previousTokenType;
 	private String previousLine;
 	private String errorMsg = "";
+	private String currentFunctionReturn = "";
 	
 	// private String[] keywords = {"class", "constructor", "function", "method",
 	// 		 					 "field", "static", "var", "int", "char", "boolean",
@@ -163,13 +164,14 @@ class CompilationEngine {
 			if (previousTokenType == TokenType.identifier.name()) {
 				tokenTypeName = "className";
 			}
+			currentFunctionReturn = previousToken;
 		}
 		
 
 		// subroutineName 
 		String subroutineName = "";
 		if (expect(new String[]{"subroutineName"}, new TokenType[]{TokenType.identifier}, true)) {
-			previousToken = subroutineName;
+			subroutineName = previousToken;
 		} 
 
 		// '(' 
@@ -198,12 +200,13 @@ class CompilationEngine {
 		writer.writeFunction(subroutineName, numOfParameters); // 1 parameter due to constructor
 		if (functionType.equals("constructor")) {
 			// Must allocate memory for new object and set base of this to new object's base address.
-			// do Memory.alloc(size) where size = number of field parameters
+			writer.writePush(SegmentType.CONSTANT, symbolTable.getNumOfFields()); // push number of fields to stack
+			writer.writeCall("Memory.alloc", 1);
+			writer.writePop(SegmentType.POINTER, 0); // THIS = MEMORY ADDRESS
 		} else if (functionType.equals("method")) {
 			writer.writePush(SegmentType.ARG, 0);
 			writer.writePop(SegmentType.POINTER, 0); // THIS = argument 0
 		} else { // Function
-			
 		}
 
 		compileSubroutineBody();
@@ -212,7 +215,6 @@ class CompilationEngine {
 		// If constructor, return this. Ensure this is correct and inserted correctly.
 
 		writer.spaceCount--;
-		writer.writeXMLLine("</subroutineDec>");
 
 		return true;
 	}
@@ -277,34 +279,27 @@ class CompilationEngine {
 	
 	// Compiles a subroutine's body.
 	private void compileSubroutineBody() throws Exception {
-		writer.writeXMLLine("<subroutineBody>");
 		writer.spaceCount++;
 
 		// '{' 
 		if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {
-			writer.writeXMLLine("<symbol> { </symbol>");
 		}
 
 		// varDec* 
 		while(compileVarDec()) {}
 
 		// statements
-		writer.writeXMLLine("<statements>");
 		writer.spaceCount++;
 		compileStatements();
 		writer.spaceCount--;
-		writer.writeXMLLine("</statements>");
-		// System.out.println("FAILED: " + previousLine + " " + usePreviousLine);
 
 		usePreviousLine = true;
 		
 		// '}'
 		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
-			writer.writeXMLLine("<symbol> } </symbol>");
 		}
 
 		writer.spaceCount--;
-		writer.writeXMLLine("</subroutineBody>");
 	}
 	
 	// Compiles a var declaration.
@@ -326,8 +321,7 @@ class CompilationEngine {
 			if (previousTokenType == TokenType.identifier.name()) {
 				tokenTypeName = "className";
 			}
-			
-			writer.writeXMLLine(String.format("<%s> %s </%s>", tokenTypeName, previousToken, tokenTypeName));
+
 		}
 		type = previousToken;
 
@@ -375,7 +369,7 @@ class CompilationEngine {
 		while (expect(new String[]{"let", "if", "while", "do", "return"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.keyword}, false)) {
 			lastOneTrue = true;
 
-			switch(previousToken){
+			switch (previousToken){
 				case "let":
 					writer.writeXMLLine("<letStatement>");
 					writer.spaceCount++;
@@ -398,16 +392,12 @@ class CompilationEngine {
 					break;
 
 				case "do":
-					writer.writeXMLLine("<doStatement>");
 					writer.spaceCount++;
-					writer.writeXMLLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
 					compileDo();
 					break;
 
 				case "return":
-					writer.writeXMLLine("<returnStatement>");
 					writer.spaceCount++;
-					writer.writeXMLLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
 					compileReturn();
 					break;
 
@@ -571,25 +561,25 @@ class CompilationEngine {
 	private void compileDo() throws Exception {
 		// subroutineCall: subroutineName '(' expressionList ')' | ( className | varName )' '.' subroutineName '(' expressionList ')'
 		// identifier = subroutineName or ( className | varName )
+		String fullSubroutineName = "";
 		if (expect(new String[]{"varOrClassOrSubroutineName"}, new TokenType[]{TokenType.identifier}, true)) {
 			// Need to figure out if it's a variable.
 			if (symbolTable.exists(previousToken)) {
 				// Token is a variable.
-				writer.writeXMLLine(String.format("<%s> %s </%s> <!--Usage. Type: %s, Index: %d -->", 
-						  symbolTable.kindOf(previousToken), previousToken, symbolTable.kindOf(previousToken), symbolTable.typeOf(previousToken), symbolTable.indexOf(previousToken)));
 			} else {
-				writer.writeXMLLine(String.format("<classOrSubroutineName> %s </classOrSubroutineName>", previousToken));
+				// Not a variable.
 			}
+			fullSubroutineName += previousToken;
 		}
 		// then check if '.' or not
 		if (expect(new String[]{"."}, new TokenType[]{TokenType.symbol}, false)) {
 			// '.' subroutineName
 			// '.'
-			writer.writeXMLLine("<symbol> . </symbol>");
+			fullSubroutineName += ".";
 
 			// subroutineName
 			if (expect(new String[]{"subroutineName"}, new TokenType[]{TokenType.identifier}, true)) {
-				writer.writeXMLLine(String.format("<subroutineName> %s </subroutineName>", previousToken));
+				fullSubroutineName += previousToken;
 			}
 		} else {
 			usePreviousLine = true;
@@ -597,24 +587,23 @@ class CompilationEngine {
 		// '(' expressionList ')'
 		// '('
 		if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {
-			writer.writeXMLLine("<symbol> ( </symbol>");
 		}
 
 		// expressionList
-		compileExpressionList();
+		int nArgs = compileExpressionList();
 
 		// ')'
 		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
-			writer.writeXMLLine("<symbol> ) </symbol>");
 		}
 		
 		// ';'
 		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
-			writer.writeXMLLine("<symbol> ; </symbol>");
 		}
 
+		writer.writeCall(fullSubroutineName, nArgs);
+		writer.writePop(SegmentType.TEMP, 0);
+
 		writer.spaceCount--;
-		writer.writeXMLLine("</doStatement>");
 	}
 	
 	// Compiles a return statement.
@@ -622,13 +611,18 @@ class CompilationEngine {
 		// expression?
 		compileExpression(false);
 
+		System.err.println(currentFunctionReturn);
+		if (currentFunctionReturn.equals("void")) {
+			writer.writePush(SegmentType.CONSTANT, 0);
+		}
+
+		writer.writeReturn();
+
 		// ';'
 		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
-			writer.writeXMLLine("<symbol> ; </symbol>");
 		}
 
 		writer.spaceCount--;
-		writer.writeXMLLine("</returnStatement>");
 	}
 	
 	// Compiles an expression.
@@ -642,8 +636,9 @@ class CompilationEngine {
 		// (op term)*
 		while (true) {
 			// 'op'
+			String opInstruction = "";
 			if (expect(new String[]{"+", "-", "*", "/", "&amp;", "|", "&lt;", "&gt;", "="}, new TokenType[]{TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol, TokenType.symbol}, false)) {
-				writer.writeXMLLine(String.format("<symbol> %s </symbol>", previousToken));
+				opInstruction = previousToken;
 			} else {
 				usePreviousLine = true;
 				break;
@@ -651,11 +646,44 @@ class CompilationEngine {
 
 			// term
 			compileTerm(false, true);
+
+			// perform op
+			switch (opInstruction) {
+				case "*":
+					writer.writeCall("Math.multiply", 2);
+					break;
+				case "/":
+					writer.writeCall("Math.divide", 2);
+					break;
+				case "+":
+					writer.writeArithmetic("ADD");
+					break;
+				case "-":
+					writer.writeArithmetic("SUB");
+					break;
+				case "&amp;":
+					writer.writeArithmetic("AND");
+					break;
+				case "|":
+					writer.writeArithmetic("OR");
+					break;
+				case "&lt;":
+					writer.writeArithmetic("LT");
+					break;
+				case "&gt;":
+					writer.writeArithmetic("GT");
+					break;
+				case "=":
+					writer.writeArithmetic("EQ");
+					break;
+				case "_":
+					throw new Exception("ERROR: Unusual, invalid operand leading to default switch case in compileExpression: " + opInstruction);
+			}
+			
 		} 
 
 		if (atLeastOneTerm) {
 			writer.spaceCount--;
-			writer.writeXMLLine("</expression>");	
 			return true;
 		} else {
 			return false;
@@ -678,11 +706,9 @@ class CompilationEngine {
 		usePreviousLine = true;
 
 		if (frontOfExpression) {
-			writer.writeXMLLine("<expression>");
 			writer.spaceCount++;
 		}
 
-		writer.writeXMLLine("<term>");
 		writer.spaceCount++;
 
 		boolean validTerm = false;
@@ -690,7 +716,7 @@ class CompilationEngine {
 		// integerConstant 
 		// tokenType is integerConstant
 		if (previousTokenType.equals(TokenType.integerConstant.name())) {
-			writer.writeXMLLine(String.format("<integerConstant> %s </integerConstant>", previousToken));
+			writer.writePush(SegmentType.CONSTANT, Integer.parseInt(previousToken));
 			validTerm = true;
 			doNotUsePreviousLine = true;
 		} else {
@@ -720,7 +746,6 @@ class CompilationEngine {
 		// '('expression')' 
 		// tokenType is symbol of token '('
 		if (!validTerm && expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, false)) {
-			writer.writeXMLLine(String.format("<symbol> ( </symbol>")); 
 			validTerm = true;
 
 			// expression
@@ -728,7 +753,6 @@ class CompilationEngine {
 
 			// ')' 
 			if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
-				writer.writeXMLLine("<symbol> ) </symbol>");
 			}
 
 			doNotUsePreviousLine = true;
@@ -742,6 +766,8 @@ class CompilationEngine {
 		if (!validTerm && expect(new String[]{"-", "~"}, new TokenType[]{TokenType.symbol, TokenType.symbol}, false)) {
 			writer.writeXMLLine(String.format("<symbol> %s </symbol>", previousToken));
 			validTerm = true;
+
+			// writer.writeArithmetic(""); NEG|NOT 
 
 			// term
 			compileTerm(false, true);
@@ -817,7 +843,6 @@ class CompilationEngine {
 
 		if (validTerm) {
 			writer.spaceCount--;
-			writer.writeXMLLine("</term>");
 		}
 
 		if (doNotUsePreviousLine) {
@@ -828,19 +853,20 @@ class CompilationEngine {
 	}
 	
 	// Compiles a (possible empty) comma-separated list of expressions.
-	private void compileExpressionList() throws Exception {
-		writer.writeXMLLine("<expressionList>");
+	private int compileExpressionList() throws Exception {
 		writer.spaceCount++;
+		int numOfExpressions = 0;
 	
 		// (expression (',' expression)* )?
 		// expression 
 		if (compileExpression(false)) {
 			// (',' expression)*
+			numOfExpressions++;
 
 			while (expect(new String[]{","}, new TokenType[]{TokenType.symbol}, false)) {
-				writer.writeXMLLine("<symbol> , </symbol>");
 
 				compileExpression(true);
+				numOfExpressions++;
 			}
 			usePreviousLine = true;
 		} else {
@@ -848,7 +874,7 @@ class CompilationEngine {
 		}
 
 		writer.spaceCount--;
-		writer.writeXMLLine("</expressionList>");
+		return numOfExpressions;
 	}
 
 	// If not told to use the previous line, then expect reads a new line of the .Txml and stores it in case of later use.

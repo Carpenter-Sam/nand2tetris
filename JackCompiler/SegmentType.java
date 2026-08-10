@@ -1,5 +1,5 @@
 enum SegmentType {
-    CONST,
+    CONSTANT,
     ARG,
     LOCAL,
     STATIC,

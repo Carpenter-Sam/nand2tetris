@@ -29,18 +29,18 @@ public class VMWriter {
     }
 
 	// - writePush (CONST|ARG|LOCAL|STATIC|THIS|THAT|POINTER|TEMP segment, int index): Writes a VM push command.
-    public void writePush(SegmentType segment, int index) throws Exception {
-        writer.write(String.format("    push %s %d\n", segment.name().toLowerCase(), index));
+    public void writePush(SegmentType segment, int pushIndex) throws Exception {
+        writer.write(String.format("    push %s %d\n", segment.name().toLowerCase(), pushIndex));
     }
 
 	// - writePop (CONST|ARG|LOCAL|STATIC|THIS|THAT|POINTER|TEMP segment, int index): Writes a VM pop command.
-    public void writePop(SegmentType segment, int index) throws Exception {
-        writer.write(String.format("    pop %s %d\n", segment.name().toLowerCase(), index));
+    public void writePop(SegmentType segment, int popIndex) throws Exception {
+        writer.write(String.format("    pop %s %d\n", segment.name().toLowerCase(), popIndex));
     }
 
 	// - writeArithmetic (ADD|SUG|NEG|EQ|GT|LT|AND|OR|NOT command): Writes a VM arithmetic-logical command.
     public void writeArithmetic(String command) throws Exception {
-        writer.write(String.format("    %s\n", command));
+        writer.write(String.format("    %s\n", command.toLowerCase()));
     }
 
 	// Writes a VM label command.
@@ -68,7 +68,7 @@ public class VMWriter {
 	// Writes a VM function command.
     // functionName -> className.functionName
     public void writeFunction(String name, int nLocals) throws Exception {
-        writer.write(String.format("function %s %d\n", name, nLocals));
+        writer.write(String.format("function %s.%s %d\n", className, name, nLocals));
     } 
 
 	// Writes a VM return command.
