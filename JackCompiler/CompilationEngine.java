@@ -197,7 +197,7 @@ class CompilationEngine {
 			pop pointer 0 // THIS = argument 0
 		If function:
 		*/
-		writer.writeFunction(subroutineName, numOfParameters); // 1 parameter due to constructor
+		writer.writeFunction(subroutineName, numOfParameters);
 		if (functionType.equals("constructor")) {
 			// Must allocate memory for new object and set base of this to new object's base address.
 			writer.writePush(SegmentType.CONSTANT, symbolTable.getNumOfFields()); // push number of fields to stack
@@ -562,10 +562,12 @@ class CompilationEngine {
 		// subroutineCall: subroutineName '(' expressionList ')' | ( className | varName )' '.' subroutineName '(' expressionList ')'
 		// identifier = subroutineName or ( className | varName )
 		String fullSubroutineName = "";
+		Boolean isVarName = false;
 		if (expect(new String[]{"varOrClassOrSubroutineName"}, new TokenType[]{TokenType.identifier}, true)) {
 			// Need to figure out if it's a variable.
 			if (symbolTable.exists(previousToken)) {
 				// Token is a variable.
+				isVarName = true;
 			} else {
 				// Not a variable.
 			}
@@ -573,6 +575,20 @@ class CompilationEngine {
 		}
 		// then check if '.' or not
 		if (expect(new String[]{"."}, new TokenType[]{TokenType.symbol}, false)) {
+			// Called method function if valid variable, must push reference to object being called
+			if (isVarName) {
+				SymbolKind kind = symbolTable.kindOf(fullSubroutineName);
+				SegmentType type;
+				if (kind.equals(SymbolKind.FIELD)) {
+					type = SegmentType.THIS;
+				} else if (kind.equals(SymbolKind.VAR)) {
+					type = SegmentType.LOCAL;
+				} else {
+					type = SegmentType.valueOf(kind.name());
+				}
+				writer.writePush(type, symbolTable.indexOf(fullSubroutineName)); // Reference to object being called
+			}
+
 			// '.' subroutineName
 			// '.'
 			fullSubroutineName += ".";
@@ -583,6 +599,8 @@ class CompilationEngine {
 			}
 		} else {
 			usePreviousLine = true;
+			// Means subroutineName() which means calling Method of current object.
+			writer.writePush(SegmentType.THIS, 0);
 		}
 		// '(' expressionList ')'
 		// '('
@@ -737,6 +755,28 @@ class CompilationEngine {
 		// tokenType is keyword of token 'true'|'false'|'null'|'this'
 		if (!validTerm && expect(new String[]{"true", "false", "null", "this"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.keyword}, false)) {
 			writer.writeXMLLine(String.format("<keyword> %s </keyword>", previousToken)); // WARNING: Maybe supposed to be keywordConstant?
+			switch (previousToken) {
+				case "true":
+					writer.writePush(SegmentType.CONSTANT, 1);
+					writer.writeArithmetic("NEG");
+					break;
+			
+				case "false":
+					writer.writePush(SegmentType.CONSTANT, 0);
+					break;
+				
+				case "null":
+					writer.writePush(SegmentType.CONSTANT, 0);
+					break;
+				
+				case "this": // WARNING: Assuming this 0 = current object
+					writer.writePush(SegmentType.THIS, 0);
+					break;
+				
+				default:
+					break;
+			}
+
 			validTerm = true;
 			doNotUsePreviousLine = true;
 		} else {
@@ -764,13 +804,18 @@ class CompilationEngine {
 		// (unaryOp term) 
 		// tokenType is symbol of token '-'|'~'
 		if (!validTerm && expect(new String[]{"-", "~"}, new TokenType[]{TokenType.symbol, TokenType.symbol}, false)) {
-			writer.writeXMLLine(String.format("<symbol> %s </symbol>", previousToken));
 			validTerm = true;
-
-			// writer.writeArithmetic(""); NEG|NOT 
+			String unaryOp = previousToken;
 
 			// term
 			compileTerm(false, true);
+
+			// unaryOp written after term. e.g., -1 -> push 1; NEG;
+			if (unaryOp.equals("-")) {
+				writer.writeArithmetic("NEG");
+			} else {
+				writer.writeArithmetic("NOT");
+			}
 		} else {
 			usePreviousLine = true;
 		}
@@ -781,12 +826,11 @@ class CompilationEngine {
 
 			// varName|subroutineName|className
 			// Need to figure out if it's a variable.
+			boolean isVar = false;
 			if (symbolTable.exists(varToken)) {
 				// Token is a variable.
-				writer.writeXMLLine(String.format("<%s> %s </%s> <!--Usage. Type: %s, Index: %d -->", 
-						  symbolTable.kindOf(varToken), varToken, symbolTable.kindOf(varToken), symbolTable.typeOf(varToken), symbolTable.indexOf(varToken)));
+				isVar = true;
 			} else {
-				writer.writeXMLLine(String.format("<classOrSubroutineName> %s </classOrSubroutineName>", varToken));
 			}
 
 			// varName'['expression']' 
@@ -833,9 +877,9 @@ class CompilationEngine {
 					writer.writeXMLLine("<symbol> ) </symbol>");
 				}
 
-			// varName  (already written)
+			// varName
 			// tokenType of identifier followed not by a symbol of token '['
-			} else {
+			} else (
 				usePreviousLine = true;
 			}
 

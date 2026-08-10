@@ -25,7 +25,7 @@ public class SymbolTable {
     // Defines new identifier of given name, type, and kind and assigns it a running index.
 	//      STATIC and FIELD are class scope.
 	// 	    ARG and VAR are subroutine scope.
-    public void define (String name, String type, SymbolKind kind) {
+    public void define(String name, String type, SymbolKind kind) {
         boolean isClassScope = (kind == SymbolKind.STATIC || kind == SymbolKind.FIELD);
         if (isClassScope) { // Class scope means looking at the class table.
             int runningIndex;
