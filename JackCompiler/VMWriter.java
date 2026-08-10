@@ -6,7 +6,7 @@ public class VMWriter {
     private BufferedWriter writer;
     public int spaceCount = 0;
     private String className = "";
-    private int index = 0;
+    private int labelIndex = 0;
 
     // Creates a new .vm or XML output file.
     public VMWriter(File write) throws Exception {
@@ -44,9 +44,14 @@ public class VMWriter {
     }
 
 	// Writes a VM label command.
+    public void writeLabel(String label) throws Exception {
+        writer.write(String.format("label %s\n", label));
+    }
+
+    // Claims a unique label by iterating the label index.
     // Each class has a running index for each label so LoopLabel -> ClassName_i where i is an index starting at 0.
-    public void writeLabel() throws Exception {
-        writer.write(String.format("label %s_%d\n", className, index++));
+    public String claimLabel() {
+        return String.format("%s_%d\n", className, labelIndex++);
     }
 
 	// Writes a VM goto command.

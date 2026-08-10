@@ -482,6 +482,11 @@ class CompilationEngine {
 		// expression 
 		compileExpression(true);
 
+		// Skips to else statements if expression is failed
+		writer.writeArithmetic("NOT");
+		String L1 = writer.claimLabel();
+		writer.writeIf(L1);
+
 		// ')' 
 		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {}
 
@@ -489,11 +494,13 @@ class CompilationEngine {
 		if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {}
 
 		// statements
-		writer.writeXMLLine("<statements>");
 		writer.spaceCount++;
 		compileStatements();
 		writer.spaceCount--;
-		writer.writeXMLLine("</statements>");
+
+		// Skip over else statements if processed if statements
+		String L2 = writer.claimLabel();
+		writer.writeGoto(L2);
 
 		usePreviousLine = true;
 
@@ -502,31 +509,28 @@ class CompilationEngine {
 
 		// ('else' '{' statements '}')?
 		// 'else'
+		writer.writeLabel(L1); // Label to jump to the else statements
 		if (expect(new String[]{"else"}, new TokenType[]{TokenType.keyword}, false)) {
-			writer.writeXMLLine("<keyword> else </keyword>");
-
 			// '{' 
 			if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {
 				writer.writeXMLLine("<symbol> { </symbol>");
 			}
 
 			// statements
-			writer.writeXMLLine("<statements>");
 			writer.spaceCount++;
 			compileStatements();
 			writer.spaceCount--;
-			writer.writeXMLLine("</statements>");
 
 			usePreviousLine = true;
 
 			// '}'
 			if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
-				writer.writeXMLLine("<symbol> } </symbol>");
 			}
 
 		} else {
 			usePreviousLine = true;
 		}
+		writer.writeLabel(L2); // Label to jump after the else statements
 
 		writer.spaceCount--;
 		writer.writeXMLLine("</ifStatement>");
