@@ -438,8 +438,8 @@ class CompilationEngine {
 			// Push varName
 			writer.writePush(varType, symbolTable.indexOf(varName)); 
 
-			// Pop pointer 1
-			writer.writePop(SegmentType.POINTER, 1);
+			// Add two values an leave on stack
+			writer.writeArithmetic("ADD");
 			
 		} else {
 			usePreviousLine = true;
@@ -455,7 +455,15 @@ class CompilationEngine {
 		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {}
 
 		// Pop into value
-		if (isExpr) { // Pop into that 0
+		if (isExpr) {
+			// First store value in temp 0 and then put location to store value in that (pointer 1)
+			writer.writePop(SegmentType.TEMP, 0);
+			writer.writePop(SegmentType.POINTER, 1);
+
+			// Put value back onto stack
+			writer.writePush(SegmentType.TEMP, 0);
+
+			// Store value inside correct location
 			writer.writePop(SegmentType.THAT, 0);
 		} else { // Pop into VarName
 			writer.writePop(varType, symbolTable.indexOf(varName)); 
@@ -870,6 +878,9 @@ class CompilationEngine {
 
 				// Push varName
 				writer.writePush(varType, symbolTable.indexOf(varToken)); 
+
+				// Add varName location + offset to get true location
+				writer.writeArithmetic("ADD");
 
 				// Pop pointer 1
 				writer.writePop(SegmentType.POINTER, 1);
