@@ -1,6 +1,9 @@
 import java.io.File;
 import java.io.FileReader;
 import java.util.Arrays;
+
+import javax.swing.text.Segment;
+
 import java.io.BufferedReader;
 
 class CompilationEngine {
@@ -414,64 +417,76 @@ class CompilationEngine {
 	// Compiles a let statement.
 	private void compileLet() throws Exception {
 		// varName 
-		if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
-			writer.writeXMLLine(String.format("<%s> %s </%s> <!--Initialisation. Index: %d -->", 
-					  symbolTable.kindOf(previousToken), previousToken, symbolTable.kindOf(previousToken), symbolTable.indexOf(previousToken)));
+		if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {}
+
+		SymbolKind varKind;
+		SegmentType varType;
+		String varName = previousToken;
+		varKind = symbolTable.kindOf(varName);
+		if (varKind.equals(SymbolKind.FIELD)) {
+			varType = SegmentType.THIS;
+		} else if (varKind.equals(SymbolKind.VAR)) {
+			varType = SegmentType.LOCAL;
+		} else {
+			varType = SegmentType.valueOf(varKind.name());
 		}
 
 		// ('['expression']')? 
 		// '['
+		boolean isExpr = false;
 		if (expect(new String[]{"["}, new TokenType[]{TokenType.symbol}, false)) {
-			writer.writeXMLLine("<symbol> [ </symbol>");
+			isExpr = true;
 
 			// expression
 			compileExpression(true);
 
 			// ']'
-			if (expect(new String[]{"]"}, new TokenType[]{TokenType.symbol}, true)) {
-				writer.writeXMLLine("<symbol> ] </symbol>");
-			}
+			if (expect(new String[]{"]"}, new TokenType[]{TokenType.symbol}, true)) {}
+
+			// Push varName
+			writer.writePush(varType, symbolTable.indexOf(varName)); 
+
+			// Pop pointer 1
+			writer.writePop(SegmentType.POINTER, 1);
+			
 		} else {
 			usePreviousLine = true;
 		}
 
 		// '=' 
 		if (expect(new String[]{"="}, new TokenType[]{TokenType.symbol}, true)) {
-			writer.writeXMLLine("<symbol> = </symbol>");
 		}
 
 		// expression
 		compileExpression(true);
 
 		// ';'
-		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
-			writer.writeXMLLine("<symbol> ; </symbol>");
+		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {}
+
+		// Pop into value
+		if (isExpr) { // Pop into that 0
+			writer.writePop(SegmentType.THAT, 0);
+		} else { // Pop into VarName
+			writer.writePop(varType, symbolTable.indexOf(varName)); 
 		}
 
 		writer.spaceCount--;
-		writer.writeXMLLine("</letStatement>");
 	}
 	
 	// Compiles an if statment, possibly with a trailing else clause.
 	private void compileIfStatement() throws Exception {
 		// code for compiling an if statement
 		// '('
-		if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {
-			writer.writeXMLLine("<symbol> ( </symbol>");
-		}
+		if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {}
 
 		// expression 
 		compileExpression(true);
 
 		// ')' 
-		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
-			writer.writeXMLLine("<symbol> ) </symbol>");
-		}
+		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {}
 
 		// '{'
-		if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {
-			writer.writeXMLLine("<symbol> { </symbol>");
-		}
+		if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {}
 
 		// statements
 		writer.writeXMLLine("<statements>");
@@ -483,9 +498,7 @@ class CompilationEngine {
 		usePreviousLine = true;
 
 		// '}' 
-		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
-			writer.writeXMLLine("<symbol> } </symbol>");
-		}
+		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {}
 
 		// ('else' '{' statements '}')?
 		// 'else'
