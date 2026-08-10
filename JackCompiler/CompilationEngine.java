@@ -539,39 +539,40 @@ class CompilationEngine {
 	// Compiles a while statement.
 	private void compileWhileStatement() throws Exception {
 		// '('
-		if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {
-			writer.writeXMLLine("<symbol> ( </symbol>");
-		}
+		if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {}
+
+		String L1 = writer.claimLabel();
+		writer.writeLabel(L1); // Point to jump to at start of each while loop.
 
 		// expression
 		compileExpression(true);
 
+		// If expression is not, then end of while loop and jump to after while loop (L2).
+		writer.writeArithmetic("NOT");
+		String L2 = writer.claimLabel();
+		writer.writeIf(L2);
+
 		// ')' 
-		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
-			writer.writeXMLLine("<symbol> ) </symbol>");
-		}
+		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {}
 
 		// '{'
-		if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {
-			writer.writeXMLLine("<symbol> { </symbol>");
-		}
+		if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {}
 
 		// statements
-		writer.writeXMLLine("<statements>");
 		writer.spaceCount++;
 		compileStatements();
 		writer.spaceCount--;
-		writer.writeXMLLine("</statements>");
 
 		usePreviousLine = true;
 
+		writer.writeGoto(L1);
+
 		// '}'
-		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
-			writer.writeXMLLine("<symbol> } </symbol>");
-		}
+		if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {}
+
+		writer.writeLabel(L2);
 
 		writer.spaceCount--;
-		writer.writeXMLLine("</whileStatement>");
 	}
 	
 	// Compiles a do statement.
