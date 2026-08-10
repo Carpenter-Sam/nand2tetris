@@ -46,6 +46,7 @@ public class SymbolTable {
 
             subroutineTable.put(name, new String[]{type, kind.name(), Integer.toString(runningIndex)});            
         }
+
     }
 
 	// Returns number of variables of given kind already defined in current scope.
@@ -117,5 +118,10 @@ public class SymbolTable {
         } else {
             return true;
         }
+    }
+
+    // Iterates argument index by 0, for use in method parameter definitions to prevent conflict with pushed object in arg 0.
+    public void iterateArg() {
+        argCount++;
     }
 }

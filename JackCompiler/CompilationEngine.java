@@ -15,6 +15,7 @@ class CompilationEngine {
 	private String previousLine;
 	private String errorMsg = "";
 	private String currentFunctionReturn = "";
+	private String currentClass;
 	
 	// private String[] keywords = {"class", "constructor", "function", "method",
 	// 		 					 "field", "static", "var", "int", "char", "boolean",
@@ -70,7 +71,8 @@ class CompilationEngine {
 		
 		// className 
 		if (expect(new String[]{"className"}, new TokenType[]{TokenType.identifier}, true)) {
-			writer.setClassName(previousToken);
+			currentClass = previousToken;
+			writer.setClassName(currentClass);
 		} 
 
 		// '{' 
@@ -177,7 +179,7 @@ class CompilationEngine {
 		if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {}
 
 		// parameterList 
-		compileParameterList(); 
+		compileParameterList(functionType); 
 		// Count number of parameters.
 
 		// ')' 
@@ -211,8 +213,11 @@ class CompilationEngine {
 	
 	// Compiles a (possible empty) parameter list.
 	// Does not handle the enclosing '()'.
-	private void compileParameterList() throws Exception {
+	private void compileParameterList(String functionType) throws Exception {
 		writer.spaceCount++;
+		if (functionType.equals("method")) {
+			symbolTable.iterateArg();
+		}
 
 		// ( (type varName) (',' type varName)*)?
 		// type
@@ -576,22 +581,29 @@ class CompilationEngine {
 		// subroutineCall: subroutineName '(' expressionList ')' | ( className | varName )' '.' subroutineName '(' expressionList ')'
 		// identifier = subroutineName or ( className | varName )
 		String fullSubroutineName = "";
+		String varName = "";
 		Boolean isVarName = false;
+		boolean isMethod = true;
 		if (expect(new String[]{"varOrClassOrSubroutineName"}, new TokenType[]{TokenType.identifier}, true)) {
 			// Need to figure out if it's a variable.
 			if (symbolTable.exists(previousToken)) {
 				// Token is a variable.
 				isVarName = true;
+				fullSubroutineName = symbolTable.typeOf(previousToken); // VarName -> ClassName
 			} else {
 				// Not a variable.
+				isMethod = false;
+				fullSubroutineName = previousToken;
 			}
-			fullSubroutineName += previousToken;
+			varName = previousToken;
 		}
+		
 		// then check if '.' or not
 		if (expect(new String[]{"."}, new TokenType[]{TokenType.symbol}, false)) {
+
 			// Called method function if valid variable, must push reference to object being called
 			if (isVarName) {
-				SymbolKind kind = symbolTable.kindOf(fullSubroutineName);
+				SymbolKind kind = symbolTable.kindOf(varName);
 				SegmentType type;
 				if (kind.equals(SymbolKind.FIELD)) {
 					type = SegmentType.THIS;
@@ -600,7 +612,10 @@ class CompilationEngine {
 				} else {
 					type = SegmentType.valueOf(kind.name());
 				}
-				writer.writePush(type, symbolTable.indexOf(fullSubroutineName)); // Reference to object being called
+				writer.writePush(type, symbolTable.indexOf(varName)); // Reference to object being called
+
+			} else {
+				isMethod = false;
 			}
 
 			// '.' subroutineName
@@ -614,7 +629,10 @@ class CompilationEngine {
 		} else {
 			usePreviousLine = true;
 			// Means subroutineName() which means calling Method of current object.
-			writer.writePush(SegmentType.THIS, 0);
+			writer.writePush(SegmentType.POINTER, 0);
+
+			fullSubroutineName = currentClass + "." + fullSubroutineName;
+			isMethod = true;
 		}
 		// '(' expressionList ')'
 		// '('
@@ -623,14 +641,15 @@ class CompilationEngine {
 
 		// expressionList
 		int nArgs = compileExpressionList();
+		if (isMethod) {
+			nArgs++; // Methods have one more argument, due to pushing a reference to the related object.
+		}
 
 		// ')'
-		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
-		}
+		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {}
 		
 		// ';'
-		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {
-		}
+		if (expect(new String[]{";"}, new TokenType[]{TokenType.symbol}, true)) {}
 
 		writer.writeCall(fullSubroutineName, nArgs);
 		writer.writePop(SegmentType.TEMP, 0);
@@ -791,8 +810,8 @@ class CompilationEngine {
 					writer.writePush(SegmentType.CONSTANT, 0);
 					break;
 				
-				case "this": // WARNING: Assuming this 0 = current object
-					writer.writePush(SegmentType.THIS, 0);
+				case "this": 
+					writer.writePush(SegmentType.POINTER, 0);
 					break;
 				
 				default:
@@ -892,24 +911,32 @@ class CompilationEngine {
 			// tokenType of identifier followed by symbol of token '(' or .
 			} else if ((usePreviousLine = true) && expect(new String[]{"(", "."}, new TokenType[]{TokenType.symbol, TokenType.symbol}, false)) {
 				// then check if '.' or not
+				boolean isMethod = true;
+				String fullSubroutineName = "";
 				if (previousToken.equals(".")) {
 					// Need to push varName 
 					if (isVar) {
 						writer.writePush(varType, symbolTable.indexOf(varToken)); 
+						fullSubroutineName = symbolTable.typeOf(varToken); // VarName -> ClassName
+					} else {
+						isMethod = false;
+						fullSubroutineName = varToken;
 					}
 
 					// '.' subroutineName
 					// '.'
-					varToken += ".";
+					fullSubroutineName += ".";
 					
 
 					// subroutineName
 					if (expect(new String[]{"subroutineName"}, new TokenType[]{TokenType.identifier}, true)) {
-						varToken += previousToken;
+						fullSubroutineName += previousToken;
 					}
 				} else {
-					writer.writePush(SegmentType.THIS, 0);
+					fullSubroutineName += currentClass + "." + varToken;
+					writer.writePush(SegmentType.POINTER, 0);
 					usePreviousLine = true;
+					isMethod = true;
 				}
 				// '(' expressionList ')'
 				// '('
@@ -918,12 +945,15 @@ class CompilationEngine {
 				
 				// expressionList
 				int nArgs = compileExpressionList();
+				if (isMethod) {
+					nArgs++; // Methods have one more argument, due to pushing a reference to the related object.
+				}
 
 				// ')'
 				if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
 				}
 
-				writer.writeCall(varToken, nArgs);
+				writer.writeCall(fullSubroutineName, nArgs);
 				// Temp 0 NOT popped because function shouldn't be void if a term.
 
 			// varName
