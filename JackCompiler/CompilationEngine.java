@@ -749,7 +749,17 @@ class CompilationEngine {
 		// stringConstant
 		// tokenType is stringConstant
 		if (!validTerm && previousTokenType.equals(TokenType.stringConstant.name())) {
-			writer.writeXMLLine(String.format("<stringConstant> %s </stringConstant>", previousToken));
+			// First create a String object
+			String stringToMake = previousToken;
+			writer.writePush(SegmentType.CONSTANT, stringToMake.length());
+			writer.writeCall("String.new", 1);
+
+			// Then push each character onto the String object
+			for (int i = 0; i < stringToMake.length(); i++) {
+				writer.writePush(SegmentType.CONSTANT, stringToMake.charAt(i));
+				writer.writeCall("String.appendChar", 2);
+			}
+
 			validTerm = true;
 			doNotUsePreviousLine = true;
 		} else {
