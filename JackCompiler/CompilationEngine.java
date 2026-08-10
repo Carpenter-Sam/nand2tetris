@@ -374,23 +374,17 @@ class CompilationEngine {
 
 			switch (previousToken){
 				case "let":
-					writer.writeXMLLine("<letStatement>");
 					writer.spaceCount++;
-					writer.writeXMLLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
 					compileLet();
 					break;
 
 				case "if":
-					writer.writeXMLLine("<ifStatement>");
 					writer.spaceCount++;
-					writer.writeXMLLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
 					compileIfStatement();
 					break;
 
 				case "while":
-					writer.writeXMLLine("<whileStatement>");
 					writer.spaceCount++;
-					writer.writeXMLLine(String.format("<%s> %s </%s>", previousTokenType, previousToken, previousTokenType));
 					compileWhileStatement();
 					break;
 
@@ -647,7 +641,6 @@ class CompilationEngine {
 		// expression?
 		compileExpression(false);
 
-		System.err.println(currentFunctionReturn);
 		if (currentFunctionReturn.equals("void")) {
 			writer.writePush(SegmentType.CONSTANT, 0);
 		}
