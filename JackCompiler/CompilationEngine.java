@@ -827,59 +827,84 @@ class CompilationEngine {
 			// varName|subroutineName|className
 			// Need to figure out if it's a variable.
 			boolean isVar = false;
+			SymbolKind varKind = SymbolKind.NONE;
+			SegmentType varType = SegmentType.NONE;
 			if (symbolTable.exists(varToken)) {
 				// Token is a variable.
 				isVar = true;
+				varKind = symbolTable.kindOf(varToken);
+				if (varKind.equals(SymbolKind.FIELD)) {
+					varType = SegmentType.THIS;
+				} else if (varKind.equals(SymbolKind.VAR)) {
+					varType = SegmentType.LOCAL;
+				} else {
+					varType = SegmentType.valueOf(varKind.name());
+				}
 			} else {
 			}
 
 			// varName'['expression']' 
 			// tokenType of identifier followed by a symbol of token '['
 			if (expect(new String[]{"["}, new TokenType[]{TokenType.symbol}, false)) { 
-				writer.writeXMLLine("<symbol> [ </symbol>");
 
 				// expression
 				compileExpression(true);
 
 				// ']' 
 				if (expect(new String[]{"]"}, new TokenType[]{TokenType.symbol}, true)) {
-					writer.writeXMLLine("<symbol> ] </symbol>");
 				}
 
+				// Push varName
+				writer.writePush(varType, symbolTable.indexOf(varToken)); 
+
+				// Pop pointer 1
+				writer.writePop(SegmentType.POINTER, 1);
+
+				// Push that 0
+				writer.writePush(SegmentType.THAT, 0);
 			
 			// subroutineCall: subroutineName '(' expressionList ')' | ( className | varName)' '.' subroutineName '(' expressionList ')'
 			// tokenType of identifier followed by symbol of token '(' or .
 			} else if ((usePreviousLine = true) && expect(new String[]{"(", "."}, new TokenType[]{TokenType.symbol, TokenType.symbol}, false)) {
 				// then check if '.' or not
 				if (previousToken.equals(".")) {
+					// Need to push varName
+					writer.writePush(varType, symbolTable.indexOf(varToken)); 
+
 					// '.' subroutineName
 					// '.'
-					writer.writeXMLLine("<symbol> . </symbol>");
+					varToken += ".";
+					
 
 					// subroutineName
 					if (expect(new String[]{"subroutineName"}, new TokenType[]{TokenType.identifier}, true)) {
-						writer.writeXMLLine(String.format("<identifier> %s </identifier>", previousToken));
+						varToken += previousToken;
 					}
 				} else {
+					writer.writePush(SegmentType.THIS, 0);
 					usePreviousLine = true;
 				}
 				// '(' expressionList ')'
 				// '('
 				if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {
-					writer.writeXMLLine("<symbol> ( </symbol>");
 				}
 				
 				// expressionList
-				compileExpressionList();
+				int nArgs = compileExpressionList();
 
 				// ')'
 				if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {
-					writer.writeXMLLine("<symbol> ) </symbol>");
 				}
+
+				writer.writeCall(varToken, nArgs);
+				// Temp 0 NOT popped because function shouldn't be void if a term.
 
 			// varName
 			// tokenType of identifier followed not by a symbol of token '['
-			} else (
+			} else {
+				// Push varName
+				writer.writePush(varType, symbolTable.indexOf(varToken)); 
+
 				usePreviousLine = true;
 			}
 

@@ -6,5 +6,6 @@ enum SegmentType {
     THIS,
     THAT,
     POINTER,
-    TEMP
+    TEMP,
+    NONE
 }
