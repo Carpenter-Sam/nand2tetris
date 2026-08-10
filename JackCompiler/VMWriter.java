@@ -51,7 +51,7 @@ public class VMWriter {
     // Claims a unique label by iterating the label index.
     // Each class has a running index for each label so LoopLabel -> ClassName_i where i is an index starting at 0.
     public String claimLabel() {
-        return String.format("%s_%d\n", className, labelIndex++);
+        return String.format("%s_%d", className, labelIndex++);
     }
 
 	// Writes a VM goto command.

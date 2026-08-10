@@ -1,9 +1,6 @@
 import java.io.File;
 import java.io.FileReader;
 import java.util.Arrays;
-
-import javax.swing.text.Segment;
-
 import java.io.BufferedReader;
 
 class CompilationEngine {
@@ -506,9 +503,7 @@ class CompilationEngine {
 		writer.writeLabel(L1); // Label to jump to the else statements
 		if (expect(new String[]{"else"}, new TokenType[]{TokenType.keyword}, false)) {
 			// '{' 
-			if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {
-				writer.writeXMLLine("<symbol> { </symbol>");
-			}
+			if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {}
 
 			// statements
 			writer.spaceCount++;
@@ -518,8 +513,7 @@ class CompilationEngine {
 			usePreviousLine = true;
 
 			// '}'
-			if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {
-			}
+			if (expect(new String[]{"}"}, new TokenType[]{TokenType.symbol}, true)) {}
 
 		} else {
 			usePreviousLine = true;
@@ -527,7 +521,6 @@ class CompilationEngine {
 		writer.writeLabel(L2); // Label to jump after the else statements
 
 		writer.spaceCount--;
-		writer.writeXMLLine("</ifStatement>");
 	}
 	
 	// Compiles a while statement.
@@ -765,7 +758,6 @@ class CompilationEngine {
 		// keywordConstant 
 		// tokenType is keyword of token 'true'|'false'|'null'|'this'
 		if (!validTerm && expect(new String[]{"true", "false", "null", "this"}, new TokenType[]{TokenType.keyword, TokenType.keyword, TokenType.keyword, TokenType.keyword}, false)) {
-			writer.writeXMLLine(String.format("<keyword> %s </keyword>", previousToken)); // WARNING: Maybe supposed to be keywordConstant?
 			switch (previousToken) {
 				case "true":
 					writer.writePush(SegmentType.CONSTANT, 1);
