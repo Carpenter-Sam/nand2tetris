@@ -38,7 +38,7 @@ public class SymbolTable {
             classTable.put(name, new String[]{type, kind.name(), Integer.toString(runningIndex)});
         } else { // Subroutine scope means looking at the subroutine table.
             int runningIndex;
-            if (kind == SymbolKind.ARG) {
+            if (kind == SymbolKind.ARGUMENT) {
                 runningIndex = argCount++;
             } else {
                 runningIndex = varCount++;
@@ -54,10 +54,12 @@ public class SymbolTable {
             return staticCount;
         } else if (kind == SymbolKind.FIELD) {
             return fieldCount;
-        } else if (kind == SymbolKind.ARG) {
+        } else if (kind == SymbolKind.ARGUMENT) {
             return  argCount;
-        } else {
+        } else if (kind == SymbolKind.VAR) {
             return varCount;
+        } else {
+            return -1;
         }
     }
 
@@ -115,9 +117,5 @@ public class SymbolTable {
         } else {
             return true;
         }
-    }
-
-    public int getNumOfFields() {
-        return fieldCount;
     }
 }

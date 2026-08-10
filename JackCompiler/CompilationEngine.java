@@ -114,7 +114,7 @@ class CompilationEngine {
 		if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
 			symbolTable.define(previousToken, type, SymbolKind.valueOf(kind));
 
-			writer.writeXMLLine(String.format("// Define of variable %s type %s, index: %d", previousToken, kind, symbolTable.indexOf(previousToken)));
+			// writer.writeXMLLine(String.format("// Define of variable %s type %s, index: %d", previousToken, kind, symbolTable.indexOf(previousToken)));
 		} 
 
 		// (',' varName)* 
@@ -130,7 +130,7 @@ class CompilationEngine {
 				// varName will have the same type and kind as the first varName initialised in the loop.
 				symbolTable.define(previousToken, type, SymbolKind.valueOf(kind));
 				
-				writer.writeXMLLine(String.format("// Define of variable %s type %s, index: %d", previousToken, kind, symbolTable.indexOf(previousToken)));
+				// writer.writeXMLLine(String.format("// Define of variable %s type %s, index: %d", previousToken, kind, symbolTable.indexOf(previousToken)));
 			}
 		} 
 
@@ -153,7 +153,6 @@ class CompilationEngine {
 			symbolTable.startSubroutine(); // Clears subroutine symbol table, ready for the next subroutine.
 			writer.spaceCount++;
 			functionType = previousToken;
-			writer.writeXMLLine(String.format("// Start of subroutine."));
 		}
 		
 		// ('void'|type) 
@@ -178,14 +177,14 @@ class CompilationEngine {
 		if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {}
 
 		// parameterList 
-		int numOfParameters = compileParameterList(); 
+		compileParameterList(); 
 		// Count number of parameters.
 
 		// ')' 
 		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {}
 
 		/*
-		Here we need to write a function: className.functionName nLocals
+		Requirements for function: className.functionName nLocals
 		If constructor:
 			Works on one argument.
 			Must allocate memory for new object and set base of this to new object's base address.
@@ -197,19 +196,10 @@ class CompilationEngine {
 			pop pointer 0 // THIS = argument 0
 		If function:
 		*/
-		writer.writeFunction(subroutineName, numOfParameters);
-		if (functionType.equals("constructor")) {
-			// Must allocate memory for new object and set base of this to new object's base address.
-			writer.writePush(SegmentType.CONSTANT, symbolTable.getNumOfFields()); // push number of fields to stack
-			writer.writeCall("Memory.alloc", 1);
-			writer.writePop(SegmentType.POINTER, 0); // THIS = MEMORY ADDRESS
-		} else if (functionType.equals("method")) {
-			writer.writePush(SegmentType.ARG, 0);
-			writer.writePop(SegmentType.POINTER, 0); // THIS = argument 0
-		} else { // Function
-		}
+		// The location where the function is written has been moved to compileSubroutineBody.
+		// This is because we need to know how many var variables there are.
 
-		compileSubroutineBody();
+		compileSubroutineBody(subroutineName, functionType);
 
 		// If method is void, then we need to insert a push constant 0 before return.
 		// If constructor, return this. Ensure this is correct and inserted correctly.
@@ -221,9 +211,8 @@ class CompilationEngine {
 	
 	// Compiles a (possible empty) parameter list.
 	// Does not handle the enclosing '()'.
-	private int compileParameterList() throws Exception {
+	private void compileParameterList() throws Exception {
 		writer.spaceCount++;
-		int numOfParameters = 0;
 
 		// ( (type varName) (',' type varName)*)?
 		// type
@@ -235,10 +224,9 @@ class CompilationEngine {
 		
 			// varName
 			if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
-				symbolTable.define(previousToken, firstType, SymbolKind.ARG);
-				numOfParameters++;
+				symbolTable.define(previousToken, firstType, SymbolKind.ARGUMENT);
 
-				writer.writeXMLLine(String.format("<%s> %s </%s> <!--Declaration+Initialisation. Index: %d -->", SymbolKind.ARG, previousToken, SymbolKind.ARG, symbolTable.indexOf(previousToken)));
+				// writer.writeXMLLine(String.format("<%s> %s </%s> <!--Declaration+Initialisation. Index: %d -->", SymbolKind.ARG, previousToken, SymbolKind.ARG, symbolTable.indexOf(previousToken)));
 			} 
 
 			// (',' type varName)*	
@@ -263,10 +251,9 @@ class CompilationEngine {
 
 				// varName
 				if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
-					symbolTable.define(previousToken, secondTypes, SymbolKind.ARG);
-					numOfParameters++;
+					symbolTable.define(previousToken, secondTypes, SymbolKind.ARGUMENT);
 
-					writer.writeXMLLine(String.format("<%s> %s </%s> <!--Declaration+Initialisation. Index: %d -->", SymbolKind.ARG, previousToken, SymbolKind.ARG, symbolTable.indexOf(previousToken)));
+					// writer.writeXMLLine(String.format("<%s> %s </%s> <!--Declaration+Initialisation. Index: %d -->", SymbolKind.ARG, previousToken, SymbolKind.ARG, symbolTable.indexOf(previousToken)));
 				} 
 			} 
 		} else {
@@ -274,11 +261,10 @@ class CompilationEngine {
 		}
 
 		writer.spaceCount--;
-		return numOfParameters;
 	}
 	
 	// Compiles a subroutine's body.
-	private void compileSubroutineBody() throws Exception {
+	private void compileSubroutineBody(String subroutineName, String functionType) throws Exception {
 		writer.spaceCount++;
 
 		// '{' 
@@ -287,6 +273,21 @@ class CompilationEngine {
 
 		// varDec* 
 		while(compileVarDec()) {}
+
+		int numOfLocals = symbolTable.varCount(SymbolKind.VAR);
+
+		// Now we write the function definition, now we have the number of local (var) variables.
+		writer.writeFunction(subroutineName, numOfLocals);
+		if (functionType.equals("constructor")) {
+			// Must allocate memory for new object and set base of this to new object's base address.
+			writer.writePush(SegmentType.CONSTANT, symbolTable.varCount(SymbolKind.FIELD)); // push number of fields to stack
+			writer.writeCall("Memory.alloc", 1);
+			writer.writePop(SegmentType.POINTER, 0); // THIS = MEMORY ADDRESS
+		} else if (functionType.equals("method")) {
+			writer.writePush(SegmentType.ARGUMENT, 0);
+			writer.writePop(SegmentType.POINTER, 0); // THIS = argument 0
+		} else { // Function
+		}
 
 		// statements
 		writer.spaceCount++;
@@ -329,7 +330,7 @@ class CompilationEngine {
 		if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
 			symbolTable.define(previousToken, type, SymbolKind.VAR);
 
-			writer.writeXMLLine(String.format("// Define of variable %s kind %s, index: %d", previousToken, type, symbolTable.indexOf(previousToken)));
+			// writer.writeXMLLine(String.format("// Define of variable %s kind %s, index: %d", previousToken, type, symbolTable.indexOf(previousToken)));
 		}
 
 		// (',' varName)* 
@@ -345,7 +346,7 @@ class CompilationEngine {
 			if (expect(new String[]{"varName"}, new TokenType[]{TokenType.identifier}, true)) {
 				symbolTable.define(previousToken, type, SymbolKind.VAR);
 
-				writer.writeXMLLine(String.format("// Define of variable %s kind %s, index: %d", previousToken, type, symbolTable.indexOf(previousToken)));
+				// writer.writeXMLLine(String.format("// Define of variable %s kind %s, index: %d", previousToken, type, symbolTable.indexOf(previousToken)));
 			}
 		} 
 
@@ -445,8 +446,7 @@ class CompilationEngine {
 		}
 
 		// '=' 
-		if (expect(new String[]{"="}, new TokenType[]{TokenType.symbol}, true)) {
-		}
+		if (expect(new String[]{"="}, new TokenType[]{TokenType.symbol}, true)) {}
 
 		// expression
 		compileExpression(true);
@@ -473,10 +473,12 @@ class CompilationEngine {
 		// expression 
 		compileExpression(true);
 
+		String L1 = writer.claimLabel();
+		String L2 = writer.claimLabel();
+
 		// Skips to else statements if expression is failed
 		writer.writeArithmetic("NOT");
-		String L1 = writer.claimLabel();
-		writer.writeIf(L1);
+		writer.writeIf(L2);
 
 		// ')' 
 		if (expect(new String[]{")"}, new TokenType[]{TokenType.symbol}, true)) {}
@@ -490,8 +492,7 @@ class CompilationEngine {
 		writer.spaceCount--;
 
 		// Skip over else statements if processed if statements
-		String L2 = writer.claimLabel();
-		writer.writeGoto(L2);
+		writer.writeGoto(L1);
 
 		usePreviousLine = true;
 
@@ -500,7 +501,7 @@ class CompilationEngine {
 
 		// ('else' '{' statements '}')?
 		// 'else'
-		writer.writeLabel(L1); // Label to jump to the else statements
+		writer.writeLabel(L2); // Label to jump to the else statements
 		if (expect(new String[]{"else"}, new TokenType[]{TokenType.keyword}, false)) {
 			// '{' 
 			if (expect(new String[]{"{"}, new TokenType[]{TokenType.symbol}, true)) {}
@@ -518,7 +519,7 @@ class CompilationEngine {
 		} else {
 			usePreviousLine = true;
 		}
-		writer.writeLabel(L2); // Label to jump after the else statements
+		writer.writeLabel(L1); // Label to jump after the else statements
 
 		writer.spaceCount--;
 	}
@@ -529,6 +530,7 @@ class CompilationEngine {
 		if (expect(new String[]{"("}, new TokenType[]{TokenType.symbol}, true)) {}
 
 		String L1 = writer.claimLabel();
+		String L2 = writer.claimLabel();
 		writer.writeLabel(L1); // Point to jump to at start of each while loop.
 
 		// expression
@@ -536,7 +538,6 @@ class CompilationEngine {
 
 		// If expression is not, then end of while loop and jump to after while loop (L2).
 		writer.writeArithmetic("NOT");
-		String L2 = writer.claimLabel();
 		writer.writeIf(L2);
 
 		// ')' 
@@ -871,8 +872,10 @@ class CompilationEngine {
 			} else if ((usePreviousLine = true) && expect(new String[]{"(", "."}, new TokenType[]{TokenType.symbol, TokenType.symbol}, false)) {
 				// then check if '.' or not
 				if (previousToken.equals(".")) {
-					// Need to push varName
-					writer.writePush(varType, symbolTable.indexOf(varToken)); 
+					// Need to push varName 
+					if (isVar) {
+						writer.writePush(varType, symbolTable.indexOf(varToken)); 
+					}
 
 					// '.' subroutineName
 					// '.'

@@ -1,7 +1,7 @@
 enum SymbolKind {
     STATIC,
     FIELD,
-    ARG,
+    ARGUMENT,
     VAR,
     NONE
 }

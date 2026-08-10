@@ -1,6 +1,6 @@
 enum SegmentType {
     CONSTANT,
-    ARG,
+    ARGUMENT,
     LOCAL,
     STATIC,
     THIS,
