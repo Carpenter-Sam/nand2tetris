@@ -15,6 +15,9 @@ class Math {
 
     // Initializes the Math library.
     function void init() {
+        let n = 16;
+        int powersOfTwo = Array.new(16,
+            0, 1, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768);
     }
 
     /** Returns the product of x and y. 
@@ -22,6 +25,29 @@ class Math {
      *  in an expression, it handles it by invoking this method. 
      *  Thus, in Jack, x * y and Math.multiply(x,y) return the same value. */
     function int multiply(int x, int y) {
+        var int sum, shiftedX, iter;
+        let sum = 0;
+        let shiftedX = x;
+        let iter = 0;
+
+        // Loops through for each bit of y, and moves shiftedX to the left.
+        // Then multiplies shiftedX by the corresponding bit of i and add it to the sum.
+        // If the corresponding y-bit = 0 then if will zero out the shiftedX temporarily.
+        while(iter < n) {
+            if (bit(shiftedX, iter) = 1) {
+                sum = sum + shiftedX;
+            }
+            shiftedX = shiftedX + shiftedX;
+
+            iter = iter + 1; // iterate iter
+        }
+        return sum;
+    }
+
+    // Returns true if the i-th bit of x is 1, false otherwise.
+    function boolean bit(int x, int i) { // Should involve only addition?
+        // bit(x, i)
+        // subtract it by itself halved until it's either 0 or 1
     }
 
     /** Returns the integer part of x / y.
@@ -45,5 +71,9 @@ class Math {
 
     /** Returns the absolute value of x. */
     function int abs(int x) {
+        if (x < 0) { // Inverts x if it's less than 0.
+            return -x;
+        }
+        return x;
     }
 }
