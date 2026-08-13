@@ -61,11 +61,12 @@ class Math {
     function int divide(int x, int y) {
         var int q, posX, posY;
         boolean negative;
+        let negative = false;
         if (x < 0) {
-            let negativeX = ~negativeX;
+            let negative = ~negative;
         }
         if (y < 0) {
-            let negativeX = ~negativeX;
+            let negative = ~negative;
         }
         let posX = Math.abs(x);
         let posY = Math.abs(y);
@@ -80,8 +81,27 @@ class Math {
 
         if (posY > posX) {return 0;}
 
-        let q = Math.divide(x, 2 * y);
-        if ((x - 2 * q * y) < y) {
+        let q = Math.divideRecursive(posX, 2 * posY);
+        if ((posX - 2 * q * posY) < posY) {
+            let q = 2 * q;
+        } else {
+            let q = 2 * q + 1;
+        }
+
+        if (negative) {
+            return -q;
+        } else {
+            return q;ß
+        }
+    }
+
+    function int divideRecursive(int x, int y) {
+        var int q;
+
+        if ((y > x) | (y < 0)) {return 0;}
+
+        let q = Math.divideRecursive(x, 2 * y);
+        if ((x - (2 * q * y)) < y) {
             return 2 * q;
         } else {
             return 2 * q + 1;
