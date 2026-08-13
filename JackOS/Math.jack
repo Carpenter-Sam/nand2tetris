@@ -59,10 +59,28 @@ class Math {
      *  an an expression, it handles it by invoking this method.
      *  Thus, x/y and Math.divide(x,y) return the same value. */
     function int divide(int x, int y) {
-        var int q;
+        var int q, posX, posY;
+        boolean negative;
+        if (x < 0) {
+            let negativeX = ~negativeX;
+        }
+        if (y < 0) {
+            let negativeX = ~negativeX;
+        }
+        let posX = Math.abs(x);
+        let posY = Math.abs(y);
 
-        if ((x > y) | (y < 0)) {return 0;}
-        let q = divide(x, 2 * y);
+        if (posX = posY) {
+            if (negative) {
+                return -1;
+            } else {
+                return 1;
+            }
+        }
+
+        if (posY > posX) {return 0;}
+
+        let q = Math.divide(x, 2 * y);
         if ((x - 2 * q * y) < y) {
             return 2 * q;
         } else {
