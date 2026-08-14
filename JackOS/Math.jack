@@ -79,6 +79,10 @@ class Math {
         var int q, posX, posY;
         var boolean negative;
 
+        if (y = 0) {
+            do Sys.error(3); // division by zero
+        }
+
         let negative = false;
         if (x < 0) {
             let negative = ~negative;
@@ -131,6 +135,11 @@ class Math {
     /** Returns the integer part of the square root of x. */
     function int sqrt(int x) {
         var int y, j, calc;
+
+        if (x < 0) {
+            do Sys.error(4); // Cannot compute square root of a negative number 
+        }
+
         let y = 0;
         let j = (n/2) - 1;
         while (j > -1) {
