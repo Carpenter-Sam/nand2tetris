@@ -100,7 +100,8 @@ class Math {
         if (posY > posX) {return 0;}
 
         let q = Math.divideRecursive(posX, 2 * posY);
-        if ((posX - 2 * q * posY) < posY) {
+
+        if ((posX - (2 * q * posY)) < posY) {
             let q = 2 * q;
         } else {
             let q = 2 * q + 1;
@@ -117,6 +118,7 @@ class Math {
         var int q;
 
         if ((y > x) | (y < 0)) {return 0;}
+        if (x = y) {return 1;}
 
         let q = Math.divideRecursive(x, 2 * y);
         if ((x - (2 * q * y)) < y) {
@@ -128,14 +130,16 @@ class Math {
 
     /** Returns the integer part of the square root of x. */
     function int sqrt(int x) {
-        var int y, j;
+        var int y, j, calc;
         let y = 0;
         let j = (n/2) - 1;
-        while (j > 0) {
-            if ( ((y + powersOfTwo[j])*(y + powersOfTwo[j])) < (x + 1) ) {
+        while (j > -1) {
+            let calc = y + powersOfTwo[j]; // y + 2^i
+            let calc = calc * calc; // (y + 2^i)^2
+            if ( (calc - 1 < x) & (calc > 0) ) {
+
                 let y = y + powersOfTwo[j];
             }
-
             let j = j - 1;
         }
         return y;
