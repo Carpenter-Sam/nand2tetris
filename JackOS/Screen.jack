@@ -9,34 +9,158 @@
  * the screen is indexed (0,0).
  */
 class Screen {
+    static boolean colour;
 
     /** Initializes the Screen. */
     function void init() {
+        let colour = true;
+        return;
     }
 
     /** Erases the entire screen. */
     function void clearScreen() {
+        var int addr;
+        
+        // Iterates through 8K memory map (16384–24575)
+        // and sets values to 0.
+        let addr = 16384;
+        while ( ~(addr = 24576) ) {
+            do Memory.poke(addr, 0);
+            let addr = addr + 1;
+        }
+        return;
     }
 
     /** Sets the current color, to be used for all subsequent drawXXX commands.
      *  Black is represented by true, white by false. */
     function void setColor(boolean b) {
+        let colour = b;
+        return;
     }
 
     /** Draws the (x,y) pixel, using the current color. */
     function void drawPixel(int x, int y) {
+        var int addr, value, num;
+        let addr = (32 * y) + (x / 16);
+        let addr = addr + 16384;
+
+        let value = Memory.peek(addr);
+
+        let num = x;
+        while (num > 159) {
+            let num = num - 160;
+        }
+        while (num > 15) {
+            let num = num - 16;
+        }
+        
+        let num = Math.getTwoPower(num); 
+
+        if (colour) { // Colour = black
+            let value = (value | num);
+        }
+        else { // Colour = black
+            if (num = -1) {
+                let num = 32767;
+            } else {
+                let num = -1 + num;
+            }
+            let value = (value & num);
+        }
+
+        do Memory.poke(addr, value);    
+        return;
     }
 
     /** Draws a line from pixel (x1,y1) to pixel (x2,y2), using the current color. */
     function void drawLine(int x1, int y1, int x2, int y2) {
+        var int a, b, diff, dx, dy, x, y, iter;
+        var boolean secondPointIsAbove;
+        let secondPointIsAbove = true;
+
+        let a = 0; let b = 0; let diff = 0;
+
+        // Result of difference is scalar, so absolute value is found.
+        let dx = x2 - x1; 
+        let dy = y2 - y1;
+
+        if (dx = 0) { // Vertical line
+            if (dy = 0) {do Screen.drawPixel(x1, y1); return;} // If dx and dy = 0 then the line is 1 pixel tall and wide.
+
+            let dy = Math.abs(dy);
+            let y = Math.min(y1, y2);
+            let iter = 0;
+            while (iter < (dy + 1)) {
+                do Screen.drawPixel(x1, y + iter);
+
+                let iter = iter + 1;
+            }
+            return;
+        }
+        if (dx > 0) { // x1 and y1 comes first
+            let x = x1;
+            let y = y1;
+        } else {      // x2 and y2 comes first
+            let x = x2;
+            let y = y2;
+            let secondPointIsAbove = ~secondPointIsAbove;
+        }
+        let dx = Math.abs(dx);
+        
+        if (dy = 0) { // Horizontal line
+            let dx = Math.abs(dx);
+            let x = Math.min(x1, x2);
+            let iter = 0;
+            while (iter < (dx + 1)) {
+                do Screen.drawPixel(x + iter, y1);
+                let iter = iter + 1;
+            }
+            return;
+        }
+        if (dy > 0) {
+            let secondPointIsAbove = ~secondPointIsAbove;
+        }
+        let dy = Math.abs(dy);
+
+        while ((a < (dx + 1)) & (b < (dy + 1))) {
+            if (secondPointIsAbove) {
+                do Screen.drawPixel(x+a, y-b);
+            } else {
+                do Screen.drawPixel(x+a, y+b);
+            }
+            if (diff < 0)     { let a = a + 1; let diff = diff + dy; } // right
+            else              { let b = b + 1; let diff = diff - dx; } // up or down
+        }
+        return;
     }
 
     /** Draws a filled rectangle whose top left corner is (x1, y1)
      *  and bottom right corner is (x2,y2), using the current color. */
     function void drawRectangle(int x1, int y1, int x2, int y2) {
+        var int rowX;
+        let rowX = x1;
+
+        // Iterates through the rows from x1 to x2 (inclusive)
+        // drawing lines between y1 and y2.
+        while (rowX < (x2 + 1)) {
+            do Screen.drawLine(rowX, y1, rowX, y2);
+            let rowX = rowX + 1;
+        }
+        return;
     }
 
     /** Draws a filled circle of radius r<=181 around (x,y), using the current color. */
     function void drawCircle(int x, int y, int r) {
+        var int rSquared, dySquared, dy;
+        let rSquared = r * r;
+        let dy = -r;
+
+        while (dy < (r + 1)) {
+            let dySquared = dy * dy;
+	        do Screen.drawLine(x - Math.sqrt(rSquared - dySquared), y + dy, x + Math.sqrt(rSquared - dySquared), y + dy);
+
+            let dy = dy + 1;
+        }
+        return;
     }
 }
