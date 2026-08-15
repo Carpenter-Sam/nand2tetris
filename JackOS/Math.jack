@@ -71,6 +71,23 @@ class Math {
         }
     }
 
+    // Gets 2^x
+    function int getTwoPower(int x) {
+        return powersOfTwo[x - 1];
+    }
+
+    // Finds the modulo of a % mod. Probably super unoptimised.
+    function int modulo(int a, int mod) {
+        var int calculation;
+        let calculation = Math.abs(a);
+
+        while (calculation > (mod - 1)) {
+            let calculation = calculation - mod;
+        }
+
+        return calculation;
+    }
+
     /** Returns the integer part of x / y.
      *  When a Jack compiler detects the division operator '/'
      *  an an expression, it handles it by invoking this method.
