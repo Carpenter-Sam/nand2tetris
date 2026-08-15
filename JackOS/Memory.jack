@@ -8,7 +8,7 @@
  * consists of 32,768 words, each holding a 16-bit binary number.
  */ 
 class Memory {
-    field int heap, freeList;
+    static int heap, freeList;
     static Array ram;
 
     /** Initializes the class. */
@@ -19,6 +19,7 @@ class Memory {
         let heap[1] = 14335; // freeList.size (size of segment)
 
         let ram = 0;
+        return;
     }
 
     /** Returns the RAM value at the given address. */
@@ -34,7 +35,7 @@ class Memory {
 
     /** Finds an available RAM block of the given size and returns
      *  a reference to its base address. */
-    function int alloc(int size) {
+    function Array alloc(int size) {
         var int addr, block;
         var boolean segmentFound;
         let addr = freeList;
@@ -53,11 +54,12 @@ class Memory {
                     do Sys.error(6); // Heap overflow 
                     // If defragmentation added, here is where defragmentation could be attempted.
                 } else {
-                    ram[addr] = addr; // Same as addr.next = addr;
+                    let ram[addr] = addr; // Same as addr.next = addr;
                 }
             }
         }
 
+        // WARNING. PROBABLY WON'T WORK WHEN ALLOCATING SMALL SIZES
         let block = (addr + ram[addr + 1] + 2) - (size + 2); // find block's location
         let ram[addr + 1] = ram[addr + 1] - (size + 2);  // shorten the size of the free segment
         let ram[block + 1] = size;                 // set size of block
@@ -73,9 +75,10 @@ class Memory {
         // loop through linkedList until addr.next is 0, then set it to the location of the array and set array.next to zero
         let addr = freeList;
         while ( ~(ram[addr] = 0) ) {
-            addr = ram[addr]; // addr = addr.next;
+            let addr = ram[addr]; // addr = addr.next;
         }
-        ram[addr] = ram[o - 2]; // addr.next = segment location of Array o;
-        ram[o - 2] = 0; // o.next = 0;
+        let ram[addr] = ram[o - 2]; // addr.next = segment location of Array o;
+        let ram[o - 2] = 0; // o.next = 0;
+        return;
     }    
 }
