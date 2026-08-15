@@ -16,7 +16,7 @@ class Memory {
         let heap = 2048; // heapBase
         let freeList = 2048;
         let heap[0] = 0; // freeList.next
-        let heap[1] = 14335; // length
+        let heap[1] = 14335; // freeList.size (size of segment)
 
         let ram = 0;
     }
@@ -35,6 +35,38 @@ class Memory {
     /** Finds an available RAM block of the given size and returns
      *  a reference to its base address. */
     function int alloc(int size) {
+        var int requiredSize, addr, block;
+        var boolean segmentFound;
+        let requiredSize = size + 1; // requiredSize is actually size + 2, but subtracting +1 turns the >= ahead into a >
+        let addr = freeList;
+        let segmentFound = false;
+
+        if (size < 1) {
+            do Sys.error(5); // Allocated memory size must be positive 
+        }
+
+        while (~segmentFound) {
+            if (ram[addr + 1] > requiredSize) { // uses first-fit search (as opposed to best-fit)
+                let segmentFound = true;
+            } else {
+                // if at final segment, then fail
+                if (ram[addr] = 0) { // WARNING: Assumes next property is zero if last segment in freeList.
+                    do Sys.error(6); // Heap overflow 
+                    // If defragmentation added, here is where defragmentation could be attempted.
+                } else {
+                    ram[addr] = addr; // Same as addr.next = addr;
+                }
+            }
+        }
+        let requiredSize = requiredSize + 1;
+
+        // WARNING. PROBABLY WON'T WORK WHEN ALLOCATING SMALL SIZES
+        let block = (addr + ram[addr + 1]) - requiredSize; // find block's location
+        let ram[addr + 1] = ram[addr + 1] - requiredSize;  // shorten the size of the free segment
+        let ram[block + 1] = requiredSize;                 // set size of block
+        let ram[block] = 0;                                // set block.next to 0
+
+        return (block + 2); // return start location of segment (after the next and size values)
     }
 
     /** De-allocates the given object (cast as an array) by making
