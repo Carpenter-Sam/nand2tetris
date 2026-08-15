@@ -58,7 +58,6 @@ class Memory {
             }
         }
 
-        // WARNING. PROBABLY WON'T WORK WHEN ALLOCATING SMALL SIZES
         let block = (addr + ram[addr + 1] + 2) - (size + 2); // find block's location
         let ram[addr + 1] = ram[addr + 1] - (size + 2);  // shorten the size of the free segment
         let ram[block + 1] = size;                 // set size of block
