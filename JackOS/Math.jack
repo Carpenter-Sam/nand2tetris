@@ -73,7 +73,7 @@ class Math {
 
     // Gets 2^x
     function int getTwoPower(int x) {
-        return powersOfTwo[x - 1];
+        return powersOfTwo[x];
     }
 
     // Finds the modulo of a % mod. Probably super unoptimised.
