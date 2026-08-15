@@ -70,5 +70,13 @@ class Memory {
     /** De-allocates the given object (cast as an array) by making
      *  it available for future allocations. */
     function void deAlloc(Array o) {
+        var int addr;
+        // loop through linkedList until addr.next is 0, then set it to the location of the array and set array.next to zero
+        let addr = freeList;
+        while ( ~(ram[addr] = 0) ) {
+            addr = ram[addr]; // addr = addr.next;
+        }
+        ram[addr] = ram[o - 2]; // addr.next = segment location of Array o;
+        ram[o - 2] = 0; // o.next = 0;
     }    
 }
