@@ -35,9 +35,8 @@ class Memory {
     /** Finds an available RAM block of the given size and returns
      *  a reference to its base address. */
     function int alloc(int size) {
-        var int requiredSize, addr, block;
+        var int addr, block;
         var boolean segmentFound;
-        let requiredSize = size + 1; // requiredSize is actually size + 2, but subtracting +1 turns the >= ahead into a >
         let addr = freeList;
         let segmentFound = false;
 
@@ -46,7 +45,7 @@ class Memory {
         }
 
         while (~segmentFound) {
-            if (ram[addr + 1] > requiredSize) { // uses first-fit search (as opposed to best-fit)
+            if (ram[addr + 1] > (size + 1)) { // uses first-fit search (as opposed to best-fit)
                 let segmentFound = true;
             } else {
                 // if at final segment, then fail
@@ -58,12 +57,11 @@ class Memory {
                 }
             }
         }
-        let requiredSize = requiredSize + 1;
 
         // WARNING. PROBABLY WON'T WORK WHEN ALLOCATING SMALL SIZES
-        let block = (addr + ram[addr + 1]) - requiredSize; // find block's location
-        let ram[addr + 1] = ram[addr + 1] - requiredSize;  // shorten the size of the free segment
-        let ram[block + 1] = requiredSize;                 // set size of block
+        let block = (addr + ram[addr + 1] + 2) - (size + 2); // find block's location
+        let ram[addr + 1] = ram[addr + 1] - (size + 2);  // shorten the size of the free segment
+        let ram[block + 1] = size;                 // set size of block
         let ram[block] = 0;                                // set block.next to 0
 
         return (block + 2); // return start location of segment (after the next and size values)
