@@ -14,12 +14,18 @@
  * as a small filled square, indicates where the next character will be displayed.
  */
 class Output {
+    static int xLocation, yLocation;
 
     // Character map for displaying characters
     static Array charMaps; 
 
     /** Initializes the screen, and locates the cursor at the screen's top-left. */
     function void init() {
+        let xLocation = 0;
+        let yLocation = 0;
+
+        do Output.initMap();
+        return;
     }
 
     // Initializes the character map array
@@ -31,7 +37,7 @@ class Output {
         // Black square, used for displaying non-printable characters.
         do Output.create(0,63,63,63,63,63,63,63,63,63,0,0);
 
-        // Assigns the bitmap for each character in the charachter set.
+        // Assigns the bitmap for each character in the character set.
         // The first parameter is the character index, the next 11 numbers
         // are the values of each row in the frame that represents this character.
         do Output.create(32,0,0,0,0,0,0,0,0,0,0,0);          //
@@ -70,7 +76,7 @@ class Output {
         do Output.create(64,30,51,51,59,59,59,27,3,30,0,0);  // @
         do Output.create(63,30,51,51,24,12,12,0,12,12,0,0);  // ?
 
-        do Output.create(65,0,0,0,0,0,0,0,0,0,0,0);          // A ** TO BE FILLED **
+        do Output.create(65,12,30,63,51,51,63,63,51,51,51,0);          // A ** TO BE FILLED **
         do Output.create(66,31,51,51,51,31,51,51,51,31,0,0); // B
         do Output.create(67,28,54,35,3,3,3,35,54,28,0,0);    // C
         do Output.create(68,15,27,51,51,51,51,51,27,15,0,0); // D
@@ -175,28 +181,177 @@ class Output {
     /** Moves the cursor to the j-th column of the i-th row,
      *  and erases the character displayed there. */
     function void moveCursor(int i, int j) {
+        var Array map;
+
+        let xLocation = j;
+        let yLocation = i;
+
+        do Output.printChar(32);
+        
+        let xLocation = j;
+        let yLocation = i;
+
+        return;
     }
 
     /** Displays the given character at the cursor location,
      *  and advances the cursor one column forward. */
     function void printChar(char c) {
+        var int location, value, mapValue, iter;
+        var Array map;
+        var boolean leftHalf;
+        let map = Output.getMap(c);
+        let location = (352 * yLocation) + ((8 * xLocation) / 16); // 352 = 32 * 11
+        
+        if (Math.bit(xLocation, 0) = 1) {
+            let leftHalf = true;
+        } else {
+            let leftHalf = false;
+        }
+        let location = location + 16384;
+        do Memory.poke(2000, location);
+
+        let iter = 0;
+        while (iter < 11) {
+            // peek
+            let value = Memory.peek(location);
+            // poke
+            let mapValue = map[iter];
+            
+            if (leftHalf) {
+                let mapValue = mapValue * 256; 
+
+                let value = value & 255; // Zero-out the left half of the value;
+            }
+            else {
+                let value = value & -256; // Zero-out the right half of the value;
+            }
+            let value = value | mapValue;
+            do Memory.poke(location, value);
+            
+            let location = location + 32;
+            let iter = iter + 1;
+        }
+
+        // Iterate cursor by one.
+        let xLocation = xLocation + 1;
+        if (xLocation > 63) {
+            let xLocation = 0;
+            let yLocation = yLocation + 1;
+        }
+        if (yLocation > 22) {
+            let yLocation = 0;
+        }
+        return;
     }
 
     /** displays the given string starting at the cursor location,
      *  and advances the cursor appropriately. */
     function void printString(String s) {
+        var int strLength, iter;
+        let strLength = s.length();
+        let iter = 0;
+        while (iter < strLength) {
+            do Output.printChar(s.charAt(iter));
+
+            let iter = iter + 1;
+        }
+
+        return;
     }
 
     /** Displays the given integer starting at the cursor location,
      *  and advances the cursor appropriately. */
     function void printInt(int i) {
+        var int num, iter, notLeadingZero;
+
+        let num = i;
+        if (i < 0) {
+            do Output.printChar(45);
+            let num = -num;
+        }
+
+        // Translate each digit
+        let notLeadingZero = false;
+
+        // Tens of Thousands
+        let iter = 0;
+        while (num > 9999) {
+            let num = num - 10000;
+            let iter = iter + 1;
+            let notLeadingZero = false;
+        }
+        if ( ~(iter = 0) | notLeadingZero ) {
+            do Output.printChar(iter + 48);
+        }
+
+        // Thousands
+        let iter = 0;
+        while (num > 999) {
+            let num = num - 1000;
+            let iter = iter + 1;
+            let notLeadingZero = false;
+        }
+        if ( ~(iter = 0) | notLeadingZero ) {
+            do Output.printChar(iter + 48);
+        }
+
+        // Hundreds
+        let iter = 0;
+        while (num > 99) {
+            let num = num - 100;
+            let iter = iter + 1;
+            let notLeadingZero = false;
+        }
+        if ( ~(iter = 0) | notLeadingZero ) {
+            do Output.printChar(iter + 48);
+        }
+
+        // Tens
+        let iter = 0;
+        while (num > 9) {
+            let num = num - 10;
+            let iter = iter + 1;
+            let notLeadingZero = false;
+        }
+        if ( ~(iter = 0) | notLeadingZero ) {
+            do Output.printChar(iter + 48);
+        }
+
+        // Ones
+        let iter = 0;
+        while (num > 0) {
+            let num = num - 1;
+            let iter = iter + 1;
+            let notLeadingZero = false;
+        }
+        if ( ~(iter = 0) | notLeadingZero ) {
+            do Output.printChar(iter + 48);
+        }
+
+        return;
     }
 
     /** Advances the cursor to the beginning of the next line. */
     function void println() {
+        let xLocation = 0;
+        let yLocation = yLocation + 1;
+        if (yLocation > 22) {
+            let yLocation = 0;
+        }
+        return;
     }
 
     /** Moves the cursor one column back. */
     function void backSpace() {
+        let xLocation = xLocation - 1;
+        if (xLocation < 0) {
+            let xLocation = 63;
+            let yLocation = yLocation - 1;
+        }
+        if (yLocation < 0) {
+            let yLocation = yLocation = 22;
+        }
+        return;
     }
 }
