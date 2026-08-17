@@ -344,14 +344,23 @@ class Output {
 
     /** Moves the cursor one column back. */
     function void backSpace() {
-        let xLocation = xLocation - 1;
-        if (xLocation < 0) {
-            let xLocation = 63;
-            let yLocation = yLocation - 1;
+        var int x, y;
+
+        let x = xLocation - 1;
+        let y = yLocation;
+        if (x < 0) {
+            let x = 63;
+            let y = y - 1;
         }
-        if (yLocation < 0) {
-            let yLocation = yLocation = 22;
+        if (y < 0) {
+            let y = 22;
         }
+
+        let xLocation = x;
+        let yLocation = y;
+        do Output.printChar(0);
+        let xLocation = x;
+        let yLocation = y;
         return;
     }
 }
