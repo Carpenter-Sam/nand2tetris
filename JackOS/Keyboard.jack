@@ -9,6 +9,7 @@ class Keyboard {
 
     /** Initializes the keyboard. */
     function void init() {
+        return;
     } 
 
     /**
@@ -55,7 +56,7 @@ class Keyboard {
         while (~(Keyboard.keyPressed() = 0)) {}
 
         do Output.printChar(key);
-        return;
+        return key;
     }
 
     /**	Displays the message on the screen, reads from the keyboard the entered
@@ -63,19 +64,27 @@ class Keyboard {
      *  and returns its value. Also handles user backspaces. */
     function String readLine(String message) {
         var String str;
-        let char c;
-        let str = new.Array(100);
+        var char c;
+        var int ram;
+        let str = String.new(100);
+        let ram = 2000;
+
+        do Output.printString(message);
 
         while (true) {
             let c = Keyboard.readChar();
+            do Memory.poke(ram, c);
+            let ram = ram + 1;
+
             if (c = 128) {
                 do Output.println(); // display newLine
                 return str;
             } 
             if (c = 129) {
                 // remove the last character from str
-                str.eraseLastChar();
+                do str.eraseLastChar();
 
+                do Output.backSpace();
                 do Output.backSpace();
             } else {
                 let str = str.appendChar(c);
@@ -90,32 +99,47 @@ class Keyboard {
      *  entered text is detected). Also handles user backspaces. */
     function int readInt(String message) {
         var String str;
-        var int num, count;
-        var boolean negated; 
-        let char c;
-        let str = new.Array(100);
-        let num = 0;
+        var int num, iter, len;
+        var boolean negated, continue; 
+        var char c;
+        let str = String.new(100);
 
         // Collect as a String
+        let str = Keyboard.readLine(message);
 
-        while (true) {
-            let c = Keyboard.readChar();
-            if (c = 128) {
-                do Output.println(); // display newLine
-                return num;
-            } 
-            if (c = 129) {
-                // remove the last character from str
-                
+        let len = str.length() - 1;
+        let iter = 0;
+        let continue = true;
+        let num = 0;
 
-                do Output.backSpace();
-            if () {
+        // Check if number is negated.
+        if (str.charAt(iter) = 45) {
+            let negated = true;
+            let iter = iter + 1;
+        }
 
+        // Loop through until first non-digit number.
+        while (continue) {
+            if (iter > len) {
+                let continue = false;
             }
-            } else {
-                let str = str.appendChar(c);
+            if (continue) {
+                let c = str.charAt(iter);
+                if ( (c > 47) & (c < 58) ) {
+                    let num = num * 10;
+                    let num = num + (c - 48);
+                } else {
+                    let continue = false;
+                }
+
+                let iter = iter + 1;
             }
         }
-        return num;
+
+        if (negated) {
+            return -num;
+        } else {
+            return num;
+        }
     }
 }
