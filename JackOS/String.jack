@@ -10,54 +10,212 @@
  * string-oriented operations.
  */
 class String {
+    field Array str;
+    field int length, max;
 
     /** constructs a new empty string with a maximum length of maxLength
      *  and initial length of 0. */
     constructor String new(int maxLength) {
+        let max = maxLength;
+        let length = 0;
+        if (max = 0) {
+            return this;
+        }
+        let str = Array.new(maxLength);
+        return this;
     }
 
     /** Disposes this string. */
     method void dispose() {
+        if (max > 0) {
+            do Memory.deAlloc(str);
+        }
+        do Memory.deAlloc(this);
+        return;
     }
 
     /** Returns the current length of this string. */
     method int length() {
+        return length;
     }
 
     /** Returns the character at the j-th location of this string. */
     method char charAt(int j) {
+        if (max = 0) {
+            return 0;
+        }
+        return str[j];
     }
 
     /** Sets the character at the j-th location of this string to c. */
     method void setCharAt(int j, char c) {
+        if (max = 0) {
+            return;
+        }
+        let str[j] = c;
+        return;
     }
 
     /** Appends c to this string's end and returns this string. */
     method String appendChar(char c) {
+        if (max = 0) {
+            return this;
+        }
+        let str[length] = c;
+        let length = length + 1;
+        return this;
     }
 
     /** Erases the last character from this string. */
     method void eraseLastChar() {
+        if (max = 0) {
+            return;
+        }
+        let length = length - 1;
+        return;
     }
 
     /** Returns the integer value of this string, 
      *  until a non-digit character is detected. */
     method int intValue() {
+        var int iter, num, len;
+        var boolean continue, negated;
+        var char c;
+        let iter = 0;
+        let continue = true;
+        let num = 0;
+        let negated = false;
+        let len = length - 1;
+
+        if (max = 0) {
+            return 0;
+        }
+
+        // Check if number is negated.
+        if (str[iter] = 45) {
+            let negated = true;
+            let iter = iter + 1;
+        }
+
+        // Loop through until first non-digit number.
+        while (continue) {
+            if (iter > len) {
+                let continue = false;
+            }
+            if (continue) {
+                let c = str[iter];
+                if ( (c > 47) & (c < 58) ) {
+                    let num = num * 10;
+                    let num = num + (c - 48);
+                } else {
+                    let continue = false;
+                }
+
+                let iter = iter + 1;
+            }
+        }
+
+        if (negated) {
+            return -num;
+        } else {
+            return num;
+        }
     }
 
     /** Sets this string to hold a representation of the given value. */
     method void setInt(int val) {
+        var int num, iter, notLeadingZero;
+        let length = 0;
+
+        if (max = 0) {
+            return;
+        }
+
+        let num = val;
+        if (val < 0) {
+            let str[length] = 45;
+            let num = -num;
+            let length = length + 1;
+        }
+
+        // Translate each digit
+        let notLeadingZero = false;
+
+        // Tens of Thousands
+        let iter = 0;
+        while (num > 9999) {
+            let num = num - 10000;
+            let iter = iter + 1;
+            let notLeadingZero = false;
+        }
+        if ( ~(iter = 0) | notLeadingZero ) {
+            let str[length] = iter + 48;
+            let length = length + 1;
+        }
+
+        // Thousands
+        let iter = 0;
+        while (num > 999) {
+            let num = num - 1000;
+            let iter = iter + 1;
+            let notLeadingZero = false;
+        }
+        if ( ~(iter = 0) | notLeadingZero ) {
+            let str[length] = iter + 48;
+            let length = length + 1;
+        }
+
+        // Hundreds
+        let iter = 0;
+        while (num > 99) {
+            let num = num - 100;
+            let iter = iter + 1;
+            let notLeadingZero = false;
+        }
+        if ( ~(iter = 0) | notLeadingZero ) {
+            let str[length] = iter + 48;
+            let length = length + 1;
+        }
+
+        // Tens
+        let iter = 0;
+        while (num > 9) {
+            let num = num - 10;
+            let iter = iter + 1;
+            let notLeadingZero = false;
+        }
+        if ( ~(iter = 0) | notLeadingZero ) {
+            let str[length] = iter + 48;
+            let length = length + 1;
+        }
+
+        // Ones
+        let iter = 0;
+        while (num > 0) {
+            let num = num - 1;
+            let iter = iter + 1;
+            let notLeadingZero = false;
+        }
+        if ( ~(iter = 0) | notLeadingZero ) {
+            let str[length] = iter + 48;
+            let length = length + 1;
+        }
+
+        return;
     }
 
     /** Returns the new line character. */
     function char newLine() {
+        return 128;
     }
 
     /** Returns the backspace character. */
     function char backSpace() {
+        return 129;
     }
 
     /** Returns the double quote (") character. */
     function char doubleQuote() {
+        return 34;
     }
 }

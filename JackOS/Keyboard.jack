@@ -107,39 +107,6 @@ class Keyboard {
         // Collect as a String
         let str = Keyboard.readLine(message);
 
-        let len = str.length() - 1;
-        let iter = 0;
-        let continue = true;
-        let num = 0;
-
-        // Check if number is negated.
-        if (str.charAt(iter) = 45) {
-            let negated = true;
-            let iter = iter + 1;
-        }
-
-        // Loop through until first non-digit number.
-        while (continue) {
-            if (iter > len) {
-                let continue = false;
-            }
-            if (continue) {
-                let c = str.charAt(iter);
-                if ( (c > 47) & (c < 58) ) {
-                    let num = num * 10;
-                    let num = num + (c - 48);
-                } else {
-                    let continue = false;
-                }
-
-                let iter = iter + 1;
-            }
-        }
-
-        if (negated) {
-            return -num;
-        } else {
-            return num;
-        }
+        return str.intValue();
     }
 }
